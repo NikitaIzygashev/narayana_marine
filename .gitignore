@@ -43,3 +43,33 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+# Local AI agents / project instructions
+# These files are developer-local and must not be committed.
+ai/
+AGENTS.md
+
+# Environment variables and local secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Firebase local/emulator data and debug logs
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+firestore-debug.*.log
+ui-debug.log
+ui-debug.*.log
+
+# Firebase Functions local dependencies (if Functions are added later)
+functions/node_modules/
+
+# Local OS / editor temporary files
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp

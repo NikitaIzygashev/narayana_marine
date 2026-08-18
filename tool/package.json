@@ -1,0 +1,17 @@
+{
+  "name": "narayana-marine-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed:dry-run": "node seed/seed_catalogue.mjs",
+    "seed:apply": "node seed/seed_catalogue.mjs --apply",
+    "test:rules": "node rules/rules.test.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.6.1"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.0",
+    "firebase": "^12.0.0"
+  }
+}

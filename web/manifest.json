@@ -1,11 +1,11 @@
 {
-    "name": "narayana_marine",
-    "short_name": "narayana_marine",
+    "name": "Narayana Marine",
+    "short_name": "Narayana Marine",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#062D3A",
+    "theme_color": "#062D3A",
+    "description": "Premium Phuket catamarans, early bird island adventures and private charters.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

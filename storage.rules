@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.uid == 'mBqYpkC87AgLsfXOVn65JnjPG6A3';
+    }
+
+    function isJpeg() {
+      return request.resource.contentType == 'image/jpeg';
+    }
+
+    match /boats/{boatId}/images/{imageId}/display.jpg {
+      allow read: if true;
+      allow create, update: if isAdmin() && isJpeg()
+        && request.resource.size <= 2500 * 1024;
+      allow delete: if isAdmin();
+    }
+
+    match /boats/{boatId}/images/{imageId}/thumbnail.jpg {
+      allow read: if true;
+      allow create, update: if isAdmin() && isJpeg()
+        && request.resource.size <= 350 * 1024;
+      allow delete: if isAdmin();
+    }
+
+    match /tours/{tourId}/images/{imageId}/display.jpg {
+      allow read: if true;
+      allow create, update: if isAdmin() && isJpeg()
+        && request.resource.size <= 2500 * 1024;
+      allow delete: if isAdmin();
+    }
+
+    match /tours/{tourId}/images/{imageId}/thumbnail.jpg {
+      allow read: if true;
+      allow create, update: if isAdmin() && isJpeg()
+        && request.resource.size <= 350 * 1024;
+      allow delete: if isAdmin();
+    }
+  }
+}

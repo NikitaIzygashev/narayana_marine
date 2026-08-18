@@ -1,17 +1,79 @@
-# narayana_marine
+# Narayana Marine
 
-A new Flutter project.
+Flutter Web website and single-administrator content editor for Narayana Marine, Phuket.
 
-## Getting Started
+## Local development
 
-This project is a starting point for a Flutter application.
+Install Flutter dependencies, then run the web application:
 
-A few resources to get you started if this is your first Flutter project:
+```powershell
+flutter pub get
+flutter run -d chrome
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+`/` is the public website and `/admin` is the protected administrator route.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Important security configuration
+
+- The sole authorized Firebase UID is enforced in `firestore.rules` and `storage.rules`.
+- Firebase Authentication must have end-user account creation and deletion disabled in Firebase Console before release.
+- The public application does not contain an account-creation flow.
+- Firestore and Storage Rules must be deployed before publishing any content.
+- Set `RECAPTCHA_V3_SITE_KEY` as a build-time value only after App Check has been registered in Firebase Console. Without it, the application runs normally but does not activate App Check.
+
+## Initial catalog
+
+The seed tool creates only missing, unpublished documents and never contains credentials.
+
+```powershell
+cd tool
+npm install
+npm run seed:dry-run
+npm run seed:apply
+```
+
+The owner must authenticate locally with Application Default Credentials before applying seed data. Do not commit credentials.
+
+## Google Maps reviews
+
+The public site links directly to Narayana Marine's supplied Google Maps card.
+It does not call Places API from the browser and does not display an invented
+rating or review. The Flutter `GoogleReviewsData` model and
+`GoogleReviewsService` interface are ready for a trusted backend response.
+
+Before a reviews backend is implemented, the Owner must:
+
+1. Attach billing to the Google Cloud project that will own the integration.
+2. Enable **Places API (New)**.
+3. Use a server-restricted API key (API restriction: Places API (New),
+   application restriction: the backend's service identity/IP only).
+4. Use a Text Search (New) request from that trusted environment to verify the
+   Narayana Marine Place ID against the supplied Google Maps card.
+5. Add a Cloud Function or another authenticated server endpoint that requests
+   only the required Place Details fields and returns a minimal read-only
+   review payload to the website.
+
+Never put that web-service API key in Dart, assets, Firestore, Git, or a web
+build argument. Review attribution requirements must be checked against the
+current Google Maps Platform terms when that backend is enabled.
+
+## Validation
+
+```powershell
+flutter analyze
+flutter test
+
+firebase emulators:start --project narayana-marine-rules-test --only auth,firestore,storage
+cd tool
+npm run test:rules
+```
+
+## Later deployment commands
+
+Do not run these commands until reviewed and approved by the Project Owner:
+
+```powershell
+flutter build web --release --dart-define=RECAPTCHA_V3_SITE_KEY=YOUR_RECAPTCHA_V3_SITE_KEY
+firebase deploy --project narayana-marine --only firestore:rules,firestore:indexes,storage
+firebase deploy --project narayana-marine --only hosting
+```

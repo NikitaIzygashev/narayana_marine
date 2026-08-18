@@ -1,0 +1,17 @@
+{
+  "boats": [
+    { "id": "vanit-1", "name": "VANIT 1", "subtitle": "Catamaran", "lengthMeters": 11.5, "capacityLabel": "Private Charter", "sortOrder": 10 },
+    { "id": "vanit-2", "name": "VANIT 2", "subtitle": "Catamaran", "lengthMeters": 12.5, "capacityLabel": "28–40 guests", "sortOrder": 20 },
+    { "id": "yuliia-5", "name": "YULIIA 5", "subtitle": "Catamaran", "lengthMeters": 13.5, "capacityLabel": "30–42 guests", "sortOrder": 30 },
+    { "id": "yuliia-9", "name": "YULIIA 9", "subtitle": "Catamaran", "lengthMeters": 14.5, "capacityLabel": "30–48 guests", "sortOrder": 40 },
+    { "id": "wongsuwan", "name": "WONGSUWAN", "subtitle": "Catamaran", "lengthMeters": 12.5, "capacityLabel": "28–38 guests", "sortOrder": 50 },
+    { "id": "tubtim", "name": "TUBTIM", "subtitle": "Private Charter", "lengthMeters": null, "capacityLabel": "2–16 guests", "sortOrder": 60 },
+    { "id": "srisuwan", "name": "SRISUWAN", "subtitle": "Private Charter", "lengthMeters": null, "capacityLabel": "2–6 guests", "sortOrder": 70 }
+  ],
+  "tours": [
+    { "id": "phi-phi-bamboo-early", "name": "Phi Phi Bamboo Early by Catamaran", "destinations": ["Maya Bay", "Pileh Lagoon", "Viking Cave", "Monkey Beach", "Phi Phi Don", "Bamboo Island", "Viewpoints"], "highlights": ["Visit the islands before the busiest hours."], "sortOrder": 10 },
+    { "id": "james-bond-early", "name": "James Bond Early by Catamaran", "destinations": ["Phang Nga Bay", "James Bond Island", "Koh Panyee", "Island beaches"], "highlights": ["Canoeing through limestone caves"], "sortOrder": 20 },
+    { "id": "krabi-pro-early-bird", "name": "Krabi Pro Early Bird by Catamaran", "destinations": ["Hong Island", "Hong Lagoon", "Koh Lao Lading", "Koh Nok", "Leam Had"], "highlights": [], "sortOrder": 30 },
+    { "id": "private-charters", "name": "Private Charters", "destinations": [], "highlights": ["Customized experiences for families, groups, celebrations and corporate guests."], "sortOrder": 40 }
+  ]
+}
