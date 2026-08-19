@@ -165,6 +165,8 @@ class ContentRepository {
     'updatedAt': FieldValue.serverTimestamp(),
   }, SetOptions(merge: true));
 
+  Future<void> deleteHero() => _hero.delete();
+
   Future<void> clearHeroPendingDeletes(Iterable<String> paths) => _hero.update({
     'pendingStorageDeletes': FieldValue.arrayRemove(paths.toList()),
     'updatedAt': FieldValue.serverTimestamp(),

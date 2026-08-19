@@ -77,6 +77,7 @@ class _HomePageState extends State<HomePage> {
   Future<GoogleReviewsData?>? _reviews;
   String? _reviewsLanguage;
   bool _hasScrolled = false;
+  bool _heroDeleting = false;
 
   @override
   void initState() {
@@ -156,6 +157,26 @@ class _HomePageState extends State<HomePage> {
       _refresh();
     } catch (_) {
       if (mounted) _message(context.strings.couldNotUploadFile);
+    }
+  }
+
+  Future<void> _deleteHero() async {
+    final strings = context.strings;
+    if (!await _confirmDelete(
+      strings.deleteHeroFileTitle,
+      strings.deleteHeroFileBody,
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _heroDeleting = true);
+    try {
+      await _cms.deleteHero();
+      if (mounted) _refresh();
+    } catch (_) {
+      if (mounted) _message(strings.couldNotDeleteFile);
+    } finally {
+      if (mounted) setState(() => _heroDeleting = false);
     }
   }
 
@@ -339,6 +360,8 @@ class _HomePageState extends State<HomePage> {
                       future: _hero,
                       adminMode: widget.adminMode,
                       onReplace: _replaceHero,
+                      onDelete: _deleteHero,
+                      deleting: _heroDeleting,
                       onTours: () => _scrollTo(_toursKey),
                       onCharter: () => _scrollTo(_fleetKey),
                     ),
@@ -482,6 +505,8 @@ class _AsyncHero extends StatelessWidget {
     required this.future,
     required this.adminMode,
     required this.onReplace,
+    required this.onDelete,
+    required this.deleting,
     required this.onTours,
     required this.onCharter,
   });
@@ -489,6 +514,8 @@ class _AsyncHero extends StatelessWidget {
   final Future<HeroMedia?> future;
   final bool adminMode;
   final Future<void> Function(SiteMediaType type) onReplace;
+  final Future<void> Function() onDelete;
+  final bool deleting;
   final VoidCallback onTours;
   final VoidCallback onCharter;
 
@@ -499,6 +526,8 @@ class _AsyncHero extends StatelessWidget {
       media: snapshot.data,
       adminMode: adminMode,
       onReplace: onReplace,
+      onDelete: onDelete,
+      deleting: deleting,
       onTours: onTours,
       onCharter: onCharter,
     ),
@@ -510,6 +539,8 @@ class _Hero extends StatelessWidget {
     required this.media,
     required this.adminMode,
     required this.onReplace,
+    required this.onDelete,
+    required this.deleting,
     required this.onTours,
     required this.onCharter,
   });
@@ -517,6 +548,8 @@ class _Hero extends StatelessWidget {
   final HeroMedia? media;
   final bool adminMode;
   final Future<void> Function(SiteMediaType type) onReplace;
+  final Future<void> Function() onDelete;
+  final bool deleting;
   final VoidCallback onTours;
   final VoidCallback onCharter;
 
@@ -654,29 +687,49 @@ class _Hero extends StatelessWidget {
           Positioned(
             right: pageGutter(context),
             bottom: 20,
-            child: PopupMenuButton<SiteMediaType>(
-              onSelected: onReplace,
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: SiteMediaType.image,
-                  child: Text(context.strings.uploadImage),
-                ),
-                PopupMenuItem(
-                  value: SiteMediaType.video,
-                  child: Text(context.strings.uploadVideo),
-                ),
-              ],
-              child: IgnorePointer(
-                child: FilledButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.upload_file),
-                  label: Text(
-                    media == null
-                        ? context.strings.uploadFile
-                        : context.strings.updateFile,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                PopupMenuButton<SiteMediaType>(
+                  enabled: !deleting,
+                  onSelected: onReplace,
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: SiteMediaType.image,
+                      child: Text(context.strings.uploadImage),
+                    ),
+                    PopupMenuItem(
+                      value: SiteMediaType.video,
+                      child: Text(context.strings.uploadVideo),
+                    ),
+                  ],
+                  child: IgnorePointer(
+                    child: FilledButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.upload_file),
+                      label: Text(
+                        media == null
+                            ? context.strings.uploadFile
+                            : context.strings.updateFile,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                if (media != null) ...[
+                  const SizedBox(width: 10),
+                  FilledButton.icon(
+                    onPressed: deleting ? null : onDelete,
+                    icon: deleting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.delete_outline),
+                    label: Text(context.strings.deleteFile),
+                  ),
+                ],
+              ],
             ),
           ),
       ],

@@ -158,6 +158,14 @@ class AppStrings {
   String get uploadVideo => isRussian ? 'Загрузить видео' : 'Upload video';
   String get uploadFile => isRussian ? 'Загрузить файл' : 'Upload file';
   String get updateFile => isRussian ? 'Обновить файл' : 'Update file';
+  String get deleteFile => isRussian ? 'Удалить файл' : 'Delete file';
+  String get deleteHeroFileTitle =>
+      isRussian ? 'Удалить файл?' : 'Delete file?';
+  String get deleteHeroFileBody => isRussian
+      ? 'Текущий фон первого экрана будет удалён. Это действие нельзя отменить.'
+      : 'The current hero background will be removed. This action cannot be undone.';
+  String get couldNotDeleteFile =>
+      isRussian ? 'Не удалось удалить файл.' : 'Failed to delete file.';
 
   String get deleteCardTitle =>
       isRussian ? 'Удалить карточку?' : 'Delete card?';

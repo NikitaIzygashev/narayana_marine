@@ -97,6 +97,10 @@ void main() {
     expect(russian.expand, 'Развернуть');
     expect(english.collapse, 'Collapse');
     expect(russian.collapse, 'Свернуть');
+    expect(english.deleteFile, 'Delete file');
+    expect(russian.deleteFile, 'Удалить файл');
+    expect(english.deleteHeroFileTitle, 'Delete file?');
+    expect(russian.deleteHeroFileTitle, 'Удалить файл?');
   });
 
   test('Google reviews response parser accepts minimal callable payload', () {

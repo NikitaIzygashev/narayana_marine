@@ -35,6 +35,15 @@ class CmsContentService {
     await cleanPendingDeletes();
   }
 
+  Future<void> deleteHero() => HeroMediaDeletionCoordinator(
+    fetchHero: _repository.fetchHero,
+    fetchPendingPaths: _repository.heroPendingDeletes,
+    deleteHeroDocument: _repository.deleteHero,
+    restoreHeroDocument: (hero, pendingPaths) =>
+        _repository.saveHero(hero, pendingDeletes: pendingPaths),
+    deleteStoragePaths: _storage.deleteAll,
+  ).deleteHero();
+
   Future<void> saveCard({
     required CmsCardKind kind,
     required CmsCard card,
@@ -151,6 +160,51 @@ class CmsContentService {
       } else {
         await _repository.deleteGalleryItem(item.id);
       }
+    }
+  }
+}
+
+class HeroMediaDeletionCoordinator {
+  const HeroMediaDeletionCoordinator({
+    required this.fetchHero,
+    required this.fetchPendingPaths,
+    required this.deleteHeroDocument,
+    required this.restoreHeroDocument,
+    required this.deleteStoragePaths,
+  });
+
+  final Future<HeroMedia?> Function() fetchHero;
+  final Future<List<String>> Function() fetchPendingPaths;
+  final Future<void> Function() deleteHeroDocument;
+  final Future<void> Function(HeroMedia hero, Iterable<String> pendingPaths)
+  restoreHeroDocument;
+  final Future<void> Function(Iterable<String> paths) deleteStoragePaths;
+
+  Future<void> deleteHero() async {
+    final hero = await fetchHero();
+    if (hero == null) return;
+
+    final pendingPaths = await fetchPendingPaths();
+    final currentPaths = hero.media.storagePaths
+        .where((path) => path.trim().isNotEmpty)
+        .toSet();
+    final previousPaths = pendingPaths
+        .where((path) => path.trim().isNotEmpty && !currentPaths.contains(path))
+        .toSet();
+
+    if (currentPaths.isEmpty) {
+      await deleteStoragePaths(previousPaths);
+      await deleteHeroDocument();
+      return;
+    }
+
+    await deleteHeroDocument();
+    try {
+      await deleteStoragePaths(previousPaths);
+      await deleteStoragePaths(currentPaths);
+    } catch (_) {
+      await restoreHeroDocument(hero, pendingPaths);
+      rethrow;
     }
   }
 }
