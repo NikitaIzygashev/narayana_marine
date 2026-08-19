@@ -86,7 +86,13 @@ class AppStrings {
       isRussian ? 'Улыбки. Брызги. Радость.' : 'Smiles. Sea spray. Pure joy.';
   String get earlyBirdAdventure =>
       isRussian ? 'Раннее приключение' : 'Early bird adventure';
-  String get viewDetails => isRussian ? 'Подробнее →' : 'View details →';
+  String get expand => isRussian ? 'Развернуть' : 'Expand';
+  String get collapse => isRussian ? 'Свернуть' : 'Collapse';
+  String get closeImageViewer =>
+      isRussian ? 'Закрыть просмотр изображения' : 'Close image viewer';
+  String get previousImage =>
+      isRussian ? 'Предыдущее изображение' : 'Previous image';
+  String get nextImage => isRussian ? 'Следующее изображение' : 'Next image';
   String get contentUnavailable => isRussian
       ? 'Этот контент временно недоступен.'
       : 'This content is temporarily unavailable.';

@@ -19,6 +19,7 @@ import '../../../services/cms_content_service.dart';
 import '../../../services/google_reviews_service.dart';
 import '../../admin/presentation/widgets/admin_card_editor_dialog.dart';
 import '../../../services/auth_service.dart';
+import 'widgets/fullscreen_image_viewer.dart';
 import 'widgets/hero_video_background.dart';
 
 const _headerOffset = 96.0;
@@ -58,6 +59,8 @@ class _HomePageState extends State<HomePage> {
   final _whyKey = GlobalKey();
   final _fleetKey = GlobalKey();
   final _contactKey = GlobalKey();
+  final _toursCardsKey = GlobalKey<_CmsCardsSectionState>();
+  final _fleetCardsKey = GlobalKey<_CmsCardsSectionState>();
   late Future<HeroMedia?> _hero = _repository.fetchHero();
   late Future<List<CmsCard>> _cmsTours = _repository.fetchCmsCards(
     CmsCardKind.tours,
@@ -308,6 +311,11 @@ class _HomePageState extends State<HomePage> {
     context,
   ).showSnackBar(SnackBar(content: Text(value)));
 
+  void _collapseCardsOutside(PointerDownEvent event) {
+    _toursCardsKey.currentState?.collapseIfOutside(event.position);
+    _fleetCardsKey.currentState?.collapseIfOutside(event.position);
+  }
+
   @override
   Widget build(BuildContext context) {
     final languageCode = context.strings.locale.languageCode;
@@ -316,89 +324,95 @@ class _HomePageState extends State<HomePage> {
       _reviews = _googleReviewsService.fetchReviews(languageCode: languageCode);
     }
     return Scaffold(
-      body: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: _refresh,
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                SliverToBoxAdapter(
-                  child: _AsyncHero(
-                    future: _hero,
-                    adminMode: widget.adminMode,
-                    onReplace: _replaceHero,
-                    onTours: () => _scrollTo(_toursKey),
-                    onCharter: () => _scrollTo(_fleetKey),
+      body: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: _collapseCardsOutside,
+        child: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: _refresh,
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: _AsyncHero(
+                      future: _hero,
+                      adminMode: widget.adminMode,
+                      onReplace: _replaceHero,
+                      onTours: () => _scrollTo(_toursKey),
+                      onCharter: () => _scrollTo(_fleetKey),
+                    ),
                   ),
-                ),
-                SliverToBoxAdapter(child: _About()),
-                SliverToBoxAdapter(
-                  key: _whyKey,
-                  child: _CmsWhyNarayana(
-                    future: _services,
-                    adminMode: widget.adminMode,
-                    onAdd: _addService,
-                    onDelete: _deleteService,
+                  SliverToBoxAdapter(child: _About()),
+                  SliverToBoxAdapter(
+                    key: _whyKey,
+                    child: _CmsWhyNarayana(
+                      future: _services,
+                      adminMode: widget.adminMode,
+                      onAdd: _addService,
+                      onDelete: _deleteService,
+                    ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  key: _toursKey,
-                  child: _CmsCardsSection(
-                    future: _cmsTours,
-                    kind: CmsCardKind.tours,
-                    adminMode: widget.adminMode,
-                    onAdd: () => _editCard(CmsCardKind.tours),
-                    onEdit: (item) => _editCard(CmsCardKind.tours, item),
-                    onDelete: (item) => _deleteCard(CmsCardKind.tours, item),
+                  SliverToBoxAdapter(
+                    key: _toursKey,
+                    child: _CmsCardsSection(
+                      key: _toursCardsKey,
+                      future: _cmsTours,
+                      kind: CmsCardKind.tours,
+                      adminMode: widget.adminMode,
+                      onAdd: () => _editCard(CmsCardKind.tours),
+                      onEdit: (item) => _editCard(CmsCardKind.tours, item),
+                      onDelete: (item) => _deleteCard(CmsCardKind.tours, item),
+                    ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  key: _fleetKey,
-                  child: _CmsCardsSection(
-                    future: _cmsFleet,
-                    kind: CmsCardKind.boats,
-                    adminMode: widget.adminMode,
-                    onAdd: () => _editCard(CmsCardKind.boats),
-                    onEdit: (item) => _editCard(CmsCardKind.boats, item),
-                    onDelete: (item) => _deleteCard(CmsCardKind.boats, item),
+                  SliverToBoxAdapter(
+                    key: _fleetKey,
+                    child: _CmsCardsSection(
+                      key: _fleetCardsKey,
+                      future: _cmsFleet,
+                      kind: CmsCardKind.boats,
+                      adminMode: widget.adminMode,
+                      onAdd: () => _editCard(CmsCardKind.boats),
+                      onEdit: (item) => _editCard(CmsCardKind.boats, item),
+                      onDelete: (item) => _deleteCard(CmsCardKind.boats, item),
+                    ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: _CmsGallerySection(
-                    future: _gallery,
-                    adminMode: widget.adminMode,
-                    onAdd: _addGallery,
-                    onDelete: _deleteGallery,
+                  SliverToBoxAdapter(
+                    child: _CmsGallerySection(
+                      future: _gallery,
+                      adminMode: widget.adminMode,
+                      onAdd: _addGallery,
+                      onDelete: _deleteGallery,
+                    ),
                   ),
-                ),
-                const SliverToBoxAdapter(child: _B2B()),
-                SliverToBoxAdapter(child: _GoogleReviews(future: _reviews!)),
-                SliverToBoxAdapter(
-                  key: _contactKey,
-                  child: _Contact(reviewsFuture: _reviews!),
-                ),
-              ],
-            ),
-          ),
-          _StickyHeader(
-            hasScrolled: _hasScrolled,
-            onTours: () => _scrollTo(_toursKey),
-            onWhyUs: () => _scrollTo(_whyKey),
-            onFleet: () => _scrollTo(_fleetKey),
-            onBook: () => _scrollTo(_contactKey),
-          ),
-          if (widget.adminMode)
-            Positioned(
-              right: 12,
-              bottom: 12,
-              child: FilledButton.icon(
-                onPressed: widget.authService?.signOut,
-                icon: const Icon(Icons.logout),
-                label: const Text('Выйти'),
+                  const SliverToBoxAdapter(child: _B2B()),
+                  SliverToBoxAdapter(child: _GoogleReviews(future: _reviews!)),
+                  SliverToBoxAdapter(
+                    key: _contactKey,
+                    child: _Contact(reviewsFuture: _reviews!),
+                  ),
+                ],
               ),
             ),
-        ],
+            _StickyHeader(
+              hasScrolled: _hasScrolled,
+              onTours: () => _scrollTo(_toursKey),
+              onWhyUs: () => _scrollTo(_whyKey),
+              onFleet: () => _scrollTo(_fleetKey),
+              onBook: () => _scrollTo(_contactKey),
+            ),
+            if (widget.adminMode)
+              Positioned(
+                right: 12,
+                bottom: 12,
+                child: FilledButton.icon(
+                  onPressed: widget.authService?.signOut,
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Выйти'),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1339,8 +1353,9 @@ class _CmsWhyNarayanaState extends State<_CmsWhyNarayana> {
   }
 }
 
-class _CmsCardsSection extends StatelessWidget {
+class _CmsCardsSection extends StatefulWidget {
   const _CmsCardsSection({
+    super.key,
     required this.future,
     required this.kind,
     required this.adminMode,
@@ -1356,13 +1371,40 @@ class _CmsCardsSection extends StatelessWidget {
   final Future<void> Function(CmsCard item) onDelete;
 
   @override
+  State<_CmsCardsSection> createState() => _CmsCardsSectionState();
+}
+
+class _CmsCardsSectionState extends State<_CmsCardsSection> {
+  final Map<String, GlobalKey> _cardKeys = {};
+  String? _expandedCardId;
+
+  GlobalKey _cardKey(String id) => _cardKeys.putIfAbsent(id, GlobalKey.new);
+
+  void collapseIfOutside(Offset globalPosition) {
+    final expandedCardId = _expandedCardId;
+    if (expandedCardId == null) return;
+    final renderBox =
+        _cardKeys[expandedCardId]?.currentContext?.findRenderObject()
+            as RenderBox?;
+    if (renderBox == null) return;
+    final cardBounds = renderBox.localToGlobal(Offset.zero) & renderBox.size;
+    if (!cardBounds.contains(globalPosition) && mounted) {
+      setState(() => _expandedCardId = null);
+    }
+  }
+
+  void _toggleCard(String id) {
+    setState(() => _expandedCardId = _expandedCardId == id ? null : id);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final strings = context.strings;
-    final tours = kind == CmsCardKind.tours;
+    final tours = widget.kind == CmsCardKind.tours;
     return _Section(
       color: tours ? const Color(0xFFF7FAFA) : null,
       child: FutureBuilder<List<CmsCard>>(
-        future: future,
+        future: widget.future,
         builder: (context, snapshot) {
           final items = snapshot.data ?? const <CmsCard>[];
           return Column(
@@ -1385,9 +1427,9 @@ class _CmsCardsSection extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (adminMode)
+                  if (widget.adminMode)
                     FilledButton.icon(
-                      onPressed: onAdd,
+                      onPressed: widget.onAdd,
                       icon: const Icon(Icons.add),
                       label: const Text('Добавить карточку'),
                     ),
@@ -1406,11 +1448,17 @@ class _CmsCardsSection extends StatelessWidget {
               else
                 _ResponsiveGrid(
                   itemCount: items.length,
-                  itemBuilder: (index) => _CmsContentCard(
-                    item: items[index],
-                    adminMode: adminMode,
-                    onEdit: () => onEdit(items[index]),
-                    onDelete: () => onDelete(items[index]),
+                  itemBuilder: (index) => KeyedSubtree(
+                    key: _cardKey(items[index].id),
+                    child: _CmsContentCard(
+                      key: ValueKey(items[index].id),
+                      item: items[index],
+                      expanded: _expandedCardId == items[index].id,
+                      adminMode: widget.adminMode,
+                      onToggle: () => _toggleCard(items[index].id),
+                      onEdit: () => widget.onEdit(items[index]),
+                      onDelete: () => widget.onDelete(items[index]),
+                    ),
                   ),
                 ),
             ],
@@ -1421,31 +1469,176 @@ class _CmsCardsSection extends StatelessWidget {
   }
 }
 
-class _CmsContentCard extends StatelessWidget {
+class _CmsContentCard extends StatefulWidget {
   const _CmsContentCard({
+    super.key,
     required this.item,
+    required this.expanded,
     required this.adminMode,
+    required this.onToggle,
     required this.onEdit,
     required this.onDelete,
   });
   final CmsCard item;
+  final bool expanded;
   final bool adminMode;
+  final VoidCallback onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
+  State<_CmsContentCard> createState() => _CmsContentCardState();
+}
+
+class _CmsContentCardState extends State<_CmsContentCard> {
+  int _selectedImageIndex = 0;
+
+  @override
+  void didUpdateWidget(covariant _CmsContentCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_selectedImageIndex >= widget.item.images.length) {
+      _selectedImageIndex = 0;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final language = context.strings.locale.languageCode;
+    final strings = context.strings;
+    final imageUrls = widget.item.images
+        .map((image) => image.url)
+        .where((url) => url.isNotEmpty)
+        .toList(growable: false);
+    final selectedImageIndex = _selectedImageIndex
+        .clamp(0, imageUrls.isEmpty ? 0 : imageUrls.length - 1)
+        .toInt();
     return Stack(
       children: [
-        _ContentCard(
-          imageUrl: item.images.isEmpty ? null : item.images.first.url,
-          title: item.titleFor(language),
-          subtitle: item.priceFor(language),
-          description: item.descriptionFor(language),
-          onTap: () => _showCmsDetails(context, item, language),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeInOutCubic,
+          alignment: Alignment.topCenter,
+          child: Card(
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AspectRatio(
+                  aspectRatio: 1.45,
+                  child: InkWell(
+                    onTap: imageUrls.isEmpty
+                        ? null
+                        : () => showFullscreenImageViewer(
+                            context,
+                            imageUrls: imageUrls,
+                            initialIndex: selectedImageIndex,
+                          ),
+                    child: _NetworkMedia(
+                      url: imageUrls.isEmpty
+                          ? null
+                          : imageUrls[selectedImageIndex],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.item.titleFor(language),
+                        maxLines: widget.expanded ? null : 2,
+                        overflow: widget.expanded
+                            ? TextOverflow.visible
+                            : TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      if (widget.item.priceFor(language).isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5),
+                          child: Text(
+                            widget.item.priceFor(language),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppTheme.sea,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      if (widget.item.descriptionFor(language).isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            widget.item.descriptionFor(language),
+                            maxLines: widget.expanded ? null : 3,
+                            overflow: widget.expanded
+                                ? TextOverflow.visible
+                                : TextOverflow.ellipsis,
+                          ),
+                        ),
+                      if (widget.expanded && imageUrls.length > 1) ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 66,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: imageUrls.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 8),
+                            itemBuilder: (context, index) => Semantics(
+                              selected: selectedImageIndex == index,
+                              button: true,
+                              child: InkWell(
+                                onTap: () =>
+                                    setState(() => _selectedImageIndex = index),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  width: 88,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: selectedImageIndex == index
+                                          ? AppTheme.aqua
+                                          : Colors.transparent,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Image.network(
+                                      imageUrls[index],
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) =>
+                                          const _ImagePlaceholder(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      TextButton.icon(
+                        onPressed: widget.onToggle,
+                        icon: Icon(
+                          widget.expanded
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                        ),
+                        label: Text(
+                          widget.expanded ? strings.collapse : strings.expand,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        if (adminMode)
+        if (widget.adminMode)
           Positioned(
             top: 6,
             right: 6,
@@ -1456,7 +1649,7 @@ class _CmsContentCard extends StatelessWidget {
                   backgroundColor: Colors.white,
                   child: IconButton(
                     tooltip: 'Редактировать',
-                    onPressed: onEdit,
+                    onPressed: widget.onEdit,
                     icon: const Icon(Icons.edit, size: 18),
                   ),
                 ),
@@ -1464,7 +1657,7 @@ class _CmsContentCard extends StatelessWidget {
                   backgroundColor: Colors.white,
                   child: IconButton(
                     tooltip: 'Удалить',
-                    onPressed: onDelete,
+                    onPressed: widget.onDelete,
                     color: Colors.red,
                     icon: const Icon(Icons.delete_outline, size: 18),
                   ),
@@ -1475,63 +1668,6 @@ class _CmsContentCard extends StatelessWidget {
       ],
     );
   }
-
-  Future<void> _showCmsDetails(
-    BuildContext context,
-    CmsCard item,
-    String language,
-  ) => showDialog<void>(
-    context: context,
-    builder: (context) => Dialog(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 760),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Flexible(
-              child: PageView(
-                children: item.images
-                    .map(
-                      (image) => Image.network(
-                        image.url,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) => const _ImagePlaceholder(),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.titleFor(language),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  if (item.priceFor(language).isNotEmpty)
-                    Text(
-                      item.priceFor(language),
-                      style: const TextStyle(
-                        color: AppTheme.sea,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  if (item.descriptionFor(language).isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(item.descriptionFor(language)),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 class _CmsGallerySection extends StatelessWidget {
@@ -1555,6 +1691,10 @@ class _CmsGallerySection extends StatelessWidget {
         future: future,
         builder: (context, snapshot) {
           final items = snapshot.data ?? const <GalleryItem>[];
+          final imageUrls = items
+              .map((item) => item.media.url)
+              .where((url) => url.isNotEmpty)
+              .toList(growable: false);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1602,13 +1742,24 @@ class _CmsGallerySection extends StatelessWidget {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                items[index].media.url,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) =>
-                                    const _ImagePlaceholder(),
+                            InkWell(
+                              onTap: imageUrls.isEmpty
+                                  ? null
+                                  : () => showFullscreenImageViewer(
+                                      context,
+                                      imageUrls: imageUrls,
+                                      initialIndex: imageUrls.indexOf(
+                                        items[index].media.url,
+                                      ),
+                                    ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  items[index].media.url,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) =>
+                                      const _ImagePlaceholder(),
+                                ),
                               ),
                             ),
                             if (adminMode)
@@ -1653,84 +1804,16 @@ class _ResponsiveGrid extends StatelessWidget {
           : constraints.maxWidth < 1000
           ? 2
           : 3;
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: itemCount,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: columns,
-          mainAxisSpacing: 18,
-          crossAxisSpacing: 18,
-          childAspectRatio: .83,
+      final cardWidth = (constraints.maxWidth - 18 * (columns - 1)) / columns;
+      return Wrap(
+        spacing: 18,
+        runSpacing: 18,
+        children: List<Widget>.generate(
+          itemCount,
+          (index) => SizedBox(width: cardWidth, child: itemBuilder(index)),
         ),
-        itemBuilder: (context, index) => itemBuilder(index),
       );
     },
-  );
-}
-
-class _ContentCard extends StatelessWidget {
-  const _ContentCard({
-    required this.imageUrl,
-    required this.title,
-    required this.subtitle,
-    required this.description,
-    required this.onTap,
-  });
-  final String? imageUrl;
-  final String title;
-  final String subtitle;
-  final String description;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Card(
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: _NetworkMedia(url: imageUrl)),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleLarge),
-                if (subtitle.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: AppTheme.sea,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                if (description.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 13),
-                  child: Text(
-                    context.strings.viewDetails,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
   );
 }
 
