@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/config/admin_access.dart';
+import '../../../core/localization/app_strings.dart';
 import '../../../services/auth_service.dart';
 import 'admin_dashboard_page.dart';
 import 'admin_login_page.dart';
@@ -67,18 +68,18 @@ class _UnauthorizedPage extends StatelessWidget {
               Icon(Icons.lock_outline, size: 48),
               SizedBox(height: 18),
               Text(
-                'Нет доступа.',
+                context.strings.adminAccessDenied,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
               ),
               SizedBox(height: 12),
               Text(
-                'Этот аккаунт не имеет прав администратора. Выполнен безопасный выход.',
+                context.strings.adminAccessDeniedBody,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
               OutlinedButton(
                 onPressed: onContinue,
-                child: const Text('Войти с другим аккаунтом'),
+                child: Text(context.strings.signInWithAnotherAccount),
               ),
             ],
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_strings.dart';
 import '../../../models/boat.dart';
 import '../../../models/content_image.dart';
 import '../../../models/tour.dart';
@@ -150,9 +151,7 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final id = _isNew ? _stableId() : (_boat?.id ?? _tour!.id);
     if (!RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(id)) {
-      setState(
-        () => _error = 'Enter a stable ID using letters, numbers and hyphens.',
-      );
+      setState(() => _error = context.strings.invalidStableId);
       return;
     }
     setState(() {
@@ -205,11 +204,11 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Content saved.')));
+        ).showSnackBar(SnackBar(content: Text(context.strings.contentSaved)));
       }
-    } catch (error) {
+    } catch (_) {
       if (mounted) {
-        setState(() => _error = '$error');
+        setState(() => _error = context.strings.couldNotSaveContent);
       }
     } finally {
       if (mounted) {
@@ -252,14 +251,15 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    final title = '${_isNew ? 'Add' : 'Edit'} ${_isBoat ? 'boat' : 'tour'}';
+    final strings = context.strings;
+    final title = strings.contentEditorTitle(isNew: _isNew, isBoat: _isBoat);
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
-            child: const Text('Save'),
+            child: Text(strings.save),
           ),
         ],
       ),
@@ -268,28 +268,28 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            _heading('Identity'),
+            _heading(strings.identity),
             TextFormField(
               controller: _id,
               enabled: _isNew,
-              decoration: const InputDecoration(labelText: 'Stable ID / slug'),
-              validator: (value) =>
-                  value == null || value.trim().isEmpty ? 'Required.' : null,
+              decoration: InputDecoration(labelText: strings.stableIdLabel),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? strings.requiredField
+                  : null,
             ),
             const SizedBox(height: 14),
             TextFormField(
               controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
-              validator: (value) =>
-                  value == null || value.trim().isEmpty ? 'Required.' : null,
+              decoration: InputDecoration(labelText: strings.name),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? strings.requiredField
+                  : null,
             ),
             const SizedBox(height: 14),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Published / active'),
-              subtitle: const Text(
-                'Only published items appear on the public website.',
-              ),
+              title: Text(strings.publishedActive),
+              subtitle: Text(strings.publishedHint),
               value: _published,
               onChanged: (value) => setState(() => _published = value),
             ),
@@ -305,16 +305,14 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const CircularProgressIndicator()
-                  : const Text('Save content'),
+                  : Text(strings.saveContent),
             ),
             const SizedBox(height: 34),
             const Divider(),
             if (_isNew)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'Save this item before uploading its gallery images.',
-                ),
+                child: Text(strings.saveBeforeGallery),
               )
             else
               ImageManager(
@@ -331,110 +329,114 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
     );
   }
 
-  List<Widget> _boatFields() => [
-    _heading('Boat details'),
-    TextFormField(
-      controller: _subtitle,
-      decoration: const InputDecoration(labelText: 'Subtitle / type'),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _description,
-      minLines: 3,
-      maxLines: 6,
-      decoration: const InputDecoration(labelText: 'Description'),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _length,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      decoration: const InputDecoration(
-        labelText: 'Length in metres (optional)',
+  List<Widget> _boatFields() {
+    final strings = context.strings;
+    return [
+      _heading(strings.boatDetails),
+      TextFormField(
+        controller: _subtitle,
+        decoration: InputDecoration(labelText: strings.subtitleType),
       ),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _capacity,
-      decoration: const InputDecoration(labelText: 'Capacity label'),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _specifications,
-      minLines: 3,
-      maxLines: 8,
-      decoration: const InputDecoration(
-        labelText: 'Specifications',
-        helperText: 'One per line: Label: Value',
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _description,
+        minLines: 3,
+        maxLines: 6,
+        decoration: InputDecoration(labelText: strings.description),
       ),
-    ),
-  ];
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _length,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(labelText: strings.lengthOptional),
+      ),
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _capacity,
+        decoration: InputDecoration(labelText: strings.capacityLabel),
+      ),
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _specifications,
+        minLines: 3,
+        maxLines: 8,
+        decoration: InputDecoration(
+          labelText: strings.specifications,
+          helperText: strings.onePerLineLabelValue,
+        ),
+      ),
+    ];
+  }
 
-  List<Widget> _tourFields() => [
-    _heading('Experience details'),
-    TextFormField(
-      controller: _shortDescription,
-      minLines: 2,
-      maxLines: 4,
-      decoration: const InputDecoration(labelText: 'Short description'),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _description,
-      minLines: 4,
-      maxLines: 8,
-      decoration: const InputDecoration(labelText: 'Full description'),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _destinations,
-      minLines: 2,
-      maxLines: 6,
-      decoration: const InputDecoration(
-        labelText: 'Destinations',
-        helperText: 'One per line',
+  List<Widget> _tourFields() {
+    final strings = context.strings;
+    return [
+      _heading(strings.experienceDetails),
+      TextFormField(
+        controller: _shortDescription,
+        minLines: 2,
+        maxLines: 4,
+        decoration: InputDecoration(labelText: strings.shortDescription),
       ),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _highlights,
-      minLines: 2,
-      maxLines: 6,
-      decoration: const InputDecoration(
-        labelText: 'Highlights',
-        helperText: 'One per line',
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _description,
+        minLines: 4,
+        maxLines: 8,
+        decoration: InputDecoration(labelText: strings.fullDescription),
       ),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _timing,
-      decoration: const InputDecoration(labelText: 'Timing label (optional)'),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _itinerary,
-      minLines: 3,
-      maxLines: 8,
-      decoration: const InputDecoration(
-        labelText: 'Itinerary',
-        helperText: 'One per line: Time | Title | Description',
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _destinations,
+        minLines: 2,
+        maxLines: 6,
+        decoration: InputDecoration(
+          labelText: strings.destinations,
+          helperText: strings.onePerLine,
+        ),
       ),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _inclusions,
-      minLines: 2,
-      maxLines: 6,
-      decoration: const InputDecoration(
-        labelText: 'Inclusions',
-        helperText: 'One per line',
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _highlights,
+        minLines: 2,
+        maxLines: 6,
+        decoration: InputDecoration(
+          labelText: strings.highlights,
+          helperText: strings.onePerLine,
+        ),
       ),
-    ),
-    const SizedBox(height: 14),
-    TextFormField(
-      controller: _price,
-      decoration: const InputDecoration(labelText: 'Price label (optional)'),
-    ),
-  ];
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _timing,
+        decoration: InputDecoration(labelText: strings.timingLabelOptional),
+      ),
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _itinerary,
+        minLines: 3,
+        maxLines: 8,
+        decoration: InputDecoration(
+          labelText: strings.itinerary,
+          helperText: strings.onePerLineItinerary,
+        ),
+      ),
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _inclusions,
+        minLines: 2,
+        maxLines: 6,
+        decoration: InputDecoration(
+          labelText: strings.inclusions,
+          helperText: strings.onePerLine,
+        ),
+      ),
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: _price,
+        decoration: InputDecoration(labelText: strings.priceLabelOptional),
+      ),
+    ];
+  }
 
   Widget _heading(String value) => Padding(
     padding: const EdgeInsets.only(bottom: 14),

@@ -155,7 +155,7 @@ class _HomePageState extends State<HomePage> {
       await _cms.replaceHero(file);
       _refresh();
     } catch (_) {
-      if (mounted) _message('Не удалось загрузить файл.');
+      if (mounted) _message(context.strings.couldNotUploadFile);
     }
   }
 
@@ -198,8 +198,8 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _deleteCard(CmsCardKind kind, CmsCard card) async {
     if (!await _confirmDelete(
-      'Удалить карточку?',
-      'Файлы этой карточки также будут удалены с сервера.',
+      context.strings.deleteCardTitle,
+      context.strings.deleteCardBody,
     )) {
       return;
     }
@@ -208,17 +208,16 @@ class _HomePageState extends State<HomePage> {
       _refresh();
     } catch (_) {
       if (mounted) {
-        _message(
-          'Не удалось удалить карточку. Очистка будет повторена при следующем входе.',
-        );
+        _message(context.strings.couldNotDeleteCard);
       }
     }
   }
 
   Future<void> _addGallery() async {
     final current = await _gallery;
+    if (!mounted) return;
     if (current.length >= 12) {
-      _message('Можно добавить не более 12 изображений.');
+      _message(context.strings.galleryLimitReached);
       return;
     }
     final file = await _storage.pickImage();
@@ -233,15 +232,15 @@ class _HomePageState extends State<HomePage> {
       _refresh();
     } catch (_) {
       if (mounted) {
-        _message('Не удалось загрузить изображение.');
+        _message(context.strings.couldNotUploadImage);
       }
     }
   }
 
   Future<void> _deleteGallery(GalleryItem item) async {
     if (!await _confirmDelete(
-      'Удалить изображение?',
-      'Файл также будет удалён с сервера.',
+      context.strings.deleteImageTitle,
+      context.strings.deleteImageBody,
     )) {
       return;
     }
@@ -250,7 +249,7 @@ class _HomePageState extends State<HomePage> {
       _refresh();
     } catch (_) {
       if (mounted) {
-        _message('Не удалось удалить изображение.');
+        _message(context.strings.couldNotDeleteImage);
       }
     }
   }
@@ -258,12 +257,13 @@ class _HomePageState extends State<HomePage> {
   Future<void> _addService(String ru, String en) async {
     final value = ru.trim();
     if (value.isEmpty) {
-      _message('Введите услугу.');
+      _message(context.strings.enterService);
       return;
     }
     final existing = await _services;
+    if (!mounted) return;
     if (existing.any((item) => item.textRu.trim() == value)) {
-      _message('Такая услуга уже существует.');
+      _message(context.strings.serviceAlreadyExists);
       return;
     }
     await _repository.saveService(
@@ -283,7 +283,7 @@ class _HomePageState extends State<HomePage> {
       await _repository.deleteService(item.id);
       _refresh();
     } catch (_) {
-      if (mounted) _message('Не удалось удалить услугу.');
+      if (mounted) _message(context.strings.couldNotDeleteService);
     }
   }
 
@@ -296,11 +296,11 @@ class _HomePageState extends State<HomePage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Отмена'),
+              child: Text(context.strings.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Удалить'),
+              child: Text(context.strings.delete),
             ),
           ],
         ),
@@ -408,7 +408,7 @@ class _HomePageState extends State<HomePage> {
                 child: FilledButton.icon(
                   onPressed: widget.authService?.signOut,
                   icon: const Icon(Icons.logout),
-                  label: const Text('Выйти'),
+                  label: Text(context.strings.signOut),
                 ),
               ),
           ],
@@ -656,14 +656,14 @@ class _Hero extends StatelessWidget {
             bottom: 20,
             child: PopupMenuButton<SiteMediaType>(
               onSelected: onReplace,
-              itemBuilder: (context) => const [
+              itemBuilder: (context) => [
                 PopupMenuItem(
                   value: SiteMediaType.image,
-                  child: Text('Загрузить изображение'),
+                  child: Text(context.strings.uploadImage),
                 ),
                 PopupMenuItem(
                   value: SiteMediaType.video,
-                  child: Text('Загрузить видео'),
+                  child: Text(context.strings.uploadVideo),
                 ),
               ],
               child: IgnorePointer(
@@ -671,7 +671,9 @@ class _Hero extends StatelessWidget {
                   onPressed: () {},
                   icon: const Icon(Icons.upload_file),
                   label: Text(
-                    media == null ? 'Загрузить файл' : 'Обновить файл',
+                    media == null
+                        ? context.strings.uploadFile
+                        : context.strings.updateFile,
                   ),
                 ),
               ),
@@ -1274,22 +1276,22 @@ class _CmsWhyNarayanaState extends State<_CmsWhyNarayana> {
                     final ruField = TextField(
                       controller: _ru,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Услуга (RU)',
+                      decoration: InputDecoration(
+                        labelText: strings.serviceRuLabel,
                       ),
                     );
                     final enField = TextField(
                       controller: _en,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _add(),
-                      decoration: const InputDecoration(
-                        labelText: 'Service (EN), optional',
+                      decoration: InputDecoration(
+                        labelText: strings.serviceEnLabel,
                       ),
                     );
                     final button = FilledButton.icon(
                       onPressed: _saving ? null : _add,
                       icon: const Icon(Icons.add),
-                      label: const Text('Добавить услугу'),
+                      label: Text(strings.addService),
                     );
                     return vertical
                         ? Column(
@@ -1431,7 +1433,7 @@ class _CmsCardsSectionState extends State<_CmsCardsSection> {
                     FilledButton.icon(
                       onPressed: widget.onAdd,
                       icon: const Icon(Icons.add),
-                      label: const Text('Добавить карточку'),
+                      label: Text(strings.addCard),
                     ),
                 ],
               ),
@@ -1648,7 +1650,7 @@ class _CmsContentCardState extends State<_CmsContentCard> {
                 CircleAvatar(
                   backgroundColor: Colors.white,
                   child: IconButton(
-                    tooltip: 'Редактировать',
+                    tooltip: context.strings.edit,
                     onPressed: widget.onEdit,
                     icon: const Icon(Icons.edit, size: 18),
                   ),
@@ -1656,7 +1658,7 @@ class _CmsContentCardState extends State<_CmsContentCard> {
                 CircleAvatar(
                   backgroundColor: Colors.white,
                   child: IconButton(
-                    tooltip: 'Удалить',
+                    tooltip: context.strings.delete,
                     onPressed: widget.onDelete,
                     color: Colors.red,
                     icon: const Icon(Icons.delete_outline, size: 18),
@@ -1717,14 +1719,14 @@ class _CmsGallerySection extends StatelessWidget {
                     FilledButton.icon(
                       onPressed: items.length >= 12 ? null : onAdd,
                       icon: const Icon(Icons.add_photo_alternate_outlined),
-                      label: const Text('Добавить изображение'),
+                      label: Text(strings.addImage),
                     ),
                 ],
               ),
               if (adminMode && items.length >= 12)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(top: 10),
-                  child: Text('Можно добавить не более 12 изображений.'),
+                  child: Text(strings.galleryLimitReached),
                 ),
               if (items.isNotEmpty) ...[
                 const SizedBox(height: 30),
@@ -1769,7 +1771,7 @@ class _CmsGallerySection extends StatelessWidget {
                                   onPressed: () => onDelete(items[index]),
                                   icon: const Icon(Icons.close),
                                   color: Colors.red,
-                                  tooltip: 'Удалить изображение',
+                                  tooltip: strings.deleteImage,
                                 ),
                               ),
                           ],

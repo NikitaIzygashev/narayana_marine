@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/localization/app_strings.dart';
 import '../../../../models/cms_models.dart';
 import '../../../../services/content_storage_service.dart';
 
@@ -11,6 +12,7 @@ class AdminCardEditorDialog extends StatefulWidget {
     required this.card,
     required this.isNew,
     required this.onSave,
+    this.pickImages,
   });
 
   final CmsCardKind kind;
@@ -22,6 +24,7 @@ class AdminCardEditorDialog extends StatefulWidget {
     Set<String> removedPaths,
   )
   onSave;
+  final Future<List<XFile>> Function()? pickImages;
 
   @override
   State<AdminCardEditorDialog> createState() => _AdminCardEditorDialogState();
@@ -29,7 +32,6 @@ class AdminCardEditorDialog extends StatefulWidget {
 
 class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _storage = ContentStorageService();
   late final _titleRu = TextEditingController(text: widget.card.titleRu);
   late final _titleEn = TextEditingController(text: widget.card.titleEn);
   late final _priceRu = TextEditingController(text: widget.card.priceRu);
@@ -62,10 +64,12 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
   }
 
   Future<void> _addImages() async {
-    final files = await _storage.pickImages();
+    final files =
+        await (widget.pickImages?.call() ??
+            ContentStorageService().pickImages());
     if (files.isEmpty) return;
     if (_images.length + _newImages.length + files.length > 10) {
-      setState(() => _error = 'Можно добавить не более 10 изображений.');
+      setState(() => _error = context.strings.cardImageLimitReached);
       return;
     }
     setState(() {
@@ -77,7 +81,7 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_images.isEmpty && _newImages.isEmpty) {
-      setState(() => _error = 'Добавьте хотя бы одно изображение.');
+      setState(() => _error = context.strings.addAtLeastOneImage);
       return;
     }
     setState(() {
@@ -100,7 +104,7 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
       );
       if (mounted) Navigator.pop(context, true);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Не удалось сохранить карточку.');
+      if (mounted) setState(() => _error = context.strings.couldNotSaveCard);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -108,7 +112,9 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(widget.isNew ? 'Добавить карточку' : 'Редактировать карточку'),
+    title: Text(
+      widget.isNew ? context.strings.addCard : context.strings.editCard,
+    ),
     content: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 700),
       child: SingleChildScrollView(
@@ -117,24 +123,35 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _field(_titleRu, 'Название (RU)', required: true),
-              _field(_titleEn, 'Название (EN)'),
-              _field(_priceRu, 'Стоимость (RU)'),
-              _field(_priceEn, 'Стоимость (EN)'),
-              _field(_descriptionRu, 'Описание (RU)', required: true, lines: 4),
-              _field(_descriptionEn, 'Описание (EN)', lines: 4),
+              _field(_titleRu, context.strings.titleRuLabel, required: true),
+              _field(_titleEn, context.strings.titleEnLabel),
+              _field(_priceRu, context.strings.priceRuLabel),
+              _field(_priceEn, context.strings.priceEnLabel),
+              _field(
+                _descriptionRu,
+                context.strings.descriptionRuLabel,
+                required: true,
+                lines: 4,
+              ),
+              _field(
+                _descriptionEn,
+                context.strings.descriptionEnLabel,
+                lines: 4,
+              ),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
                     child: Text(
-                      'Изображения (${_images.length + _newImages.length}/10)',
+                      context.strings.imagesCount(
+                        _images.length + _newImages.length,
+                      ),
                     ),
                   ),
                   OutlinedButton.icon(
                     onPressed: _saving ? null : _addImages,
                     icon: const Icon(Icons.add_photo_alternate_outlined),
-                    label: const Text('Добавить'),
+                    label: Text(context.strings.add),
                   ),
                 ],
               ),
@@ -181,7 +198,7 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
     actions: [
       TextButton(
         onPressed: _saving ? null : () => Navigator.pop(context),
-        child: const Text('Отмена'),
+        child: Text(context.strings.cancel),
       ),
       FilledButton(
         onPressed: _saving ? null : _save,
@@ -191,7 +208,7 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
                 height: 18,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Text('Сохранить'),
+            : Text(context.strings.save),
       ),
     ],
   );
@@ -210,7 +227,7 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
       decoration: InputDecoration(labelText: label),
       validator: required
           ? (value) => value == null || value.trim().isEmpty
-                ? 'Обязательное поле.'
+                ? context.strings.requiredField
                 : null
           : null,
     ),
@@ -236,7 +253,7 @@ class _ExistingImage extends StatelessWidget {
             onPressed: onDelete,
             color: Colors.red,
             icon: const Icon(Icons.close),
-            tooltip: 'Удалить изображение',
+            tooltip: context.strings.deleteImage,
           ),
         ),
       ],

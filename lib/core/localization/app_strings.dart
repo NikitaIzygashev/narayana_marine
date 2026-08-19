@@ -142,4 +142,162 @@ class AppStrings {
   String get included => isRussian ? 'Включено' : 'Included';
   String get andamanSeaExperience =>
       isRussian ? 'Впечатление Андаманского моря' : 'Andaman Sea experience';
+
+  String get add => isRussian ? 'Добавить' : 'Add';
+  String get addService => isRussian ? 'Добавить услугу' : 'Add service';
+  String get addCard => isRussian ? 'Добавить карточку' : 'Add card';
+  String get addImage => isRussian ? 'Добавить изображение' : 'Add image';
+  String get edit => isRussian ? 'Редактировать' : 'Edit';
+  String get delete => isRussian ? 'Удалить' : 'Delete';
+  String get deleteImage => isRussian ? 'Удалить изображение' : 'Delete image';
+  String get cancel => isRussian ? 'Отмена' : 'Cancel';
+  String get save => isRussian ? 'Сохранить' : 'Save';
+  String get signOut => isRussian ? 'Выйти' : 'Sign out';
+  String get uploadImage =>
+      isRussian ? 'Загрузить изображение' : 'Upload image';
+  String get uploadVideo => isRussian ? 'Загрузить видео' : 'Upload video';
+  String get uploadFile => isRussian ? 'Загрузить файл' : 'Upload file';
+  String get updateFile => isRussian ? 'Обновить файл' : 'Update file';
+
+  String get deleteCardTitle =>
+      isRussian ? 'Удалить карточку?' : 'Delete card?';
+  String get deleteCardBody => isRussian
+      ? 'Файлы этой карточки также будут удалены с сервера.'
+      : 'This card’s files will also be deleted from the server.';
+  String get deleteImageTitle =>
+      isRussian ? 'Удалить изображение?' : 'Delete image?';
+  String get deleteImageBody => isRussian
+      ? 'Файл также будет удалён с сервера.'
+      : 'The file will also be deleted from the server.';
+  String get couldNotUploadFile =>
+      isRussian ? 'Не удалось загрузить файл.' : 'Could not upload file.';
+  String get couldNotDeleteCard => isRussian
+      ? 'Не удалось удалить карточку. Очистка будет повторена при следующем входе.'
+      : 'Could not delete the card. Cleanup will be retried on the next sign-in.';
+  String get galleryLimitReached => isRussian
+      ? 'Можно добавить не более 12 изображений.'
+      : 'You can add no more than 12 images.';
+  String get couldNotUploadImage => isRussian
+      ? 'Не удалось загрузить изображение.'
+      : 'Could not upload image.';
+  String get couldNotDeleteImage =>
+      isRussian ? 'Не удалось удалить изображение.' : 'Could not delete image.';
+  String get enterService => isRussian ? 'Введите услугу.' : 'Enter a service.';
+  String get serviceAlreadyExists => isRussian
+      ? 'Такая услуга уже существует.'
+      : 'This service already exists.';
+  String get couldNotDeleteService =>
+      isRussian ? 'Не удалось удалить услугу.' : 'Could not delete service.';
+  String get serviceRuLabel => isRussian ? 'Услуга (RU)' : 'Service (RU)';
+  String get serviceEnLabel =>
+      isRussian ? 'Услуга (EN), необязательно' : 'Service (EN), optional';
+
+  String get adminAccessDenied => isRussian ? 'Нет доступа.' : 'Access denied.';
+  String get adminAccessDeniedBody => isRussian
+      ? 'Этот аккаунт не имеет прав администратора. Выполнен безопасный выход.'
+      : 'This account does not have administrator access. You have been signed out safely.';
+  String get signInWithAnotherAccount =>
+      isRussian ? 'Войти с другим аккаунтом' : 'Sign in with another account';
+  String get adminSignInTitle =>
+      isRussian ? 'Вход в панель управления' : 'Sign in to the admin panel';
+  String get password => isRussian ? 'Пароль' : 'Password';
+  String get enterEmail => isRussian ? 'Введите email.' : 'Enter an email.';
+  String get enterPassword =>
+      isRussian ? 'Введите пароль.' : 'Enter a password.';
+  String get invalidCredentials =>
+      isRussian ? 'Неверный email или пароль.' : 'Incorrect email or password.';
+  String get signIn => isRussian ? 'Войти' : 'Sign in';
+
+  String get editCard => isRussian ? 'Редактировать карточку' : 'Edit card';
+  String get titleRuLabel => isRussian ? 'Название (RU)' : 'Title (RU)';
+  String get titleEnLabel => isRussian ? 'Название (EN)' : 'Title (EN)';
+  String get priceRuLabel => isRussian ? 'Стоимость (RU)' : 'Price (RU)';
+  String get priceEnLabel => isRussian ? 'Стоимость (EN)' : 'Price (EN)';
+  String get descriptionRuLabel =>
+      isRussian ? 'Описание (RU)' : 'Description (RU)';
+  String get descriptionEnLabel =>
+      isRussian ? 'Описание (EN)' : 'Description (EN)';
+  String imagesCount(int count) =>
+      isRussian ? 'Изображения ($count/10)' : 'Images ($count/10)';
+  String get addAtLeastOneImage => isRussian
+      ? 'Добавьте хотя бы одно изображение.'
+      : 'Add at least one image.';
+  String get cardImageLimitReached => isRussian
+      ? 'Можно добавить не более 10 изображений.'
+      : 'You can add no more than 10 images.';
+  String get couldNotSaveCard =>
+      isRussian ? 'Не удалось сохранить карточку.' : 'Could not save card.';
+  String get requiredField =>
+      isRussian ? 'Обязательное поле.' : 'This field is required.';
+
+  String contentEditorTitle({required bool isNew, required bool isBoat}) {
+    final noun = isBoat
+        ? (isRussian ? 'судно' : 'boat')
+        : (isRussian ? 'экскурсию' : 'tour');
+    return isNew
+        ? (isRussian ? 'Добавить $noun' : 'Add $noun')
+        : (isRussian ? 'Редактировать $noun' : 'Edit $noun');
+  }
+
+  String get identity => isRussian ? 'Идентификатор' : 'Identity';
+  String get stableIdLabel =>
+      isRussian ? 'Стабильный ID / slug' : 'Stable ID / slug';
+  String get name => isRussian ? 'Название' : 'Name';
+  String get publishedActive =>
+      isRussian ? 'Опубликовано / активно' : 'Published / active';
+  String get publishedHint => isRussian
+      ? 'На публичном сайте отображаются только опубликованные элементы.'
+      : 'Only published items appear on the public website.';
+  String get saveContent => isRussian ? 'Сохранить контент' : 'Save content';
+  String get contentSaved => isRussian ? 'Контент сохранён.' : 'Content saved.';
+  String get saveBeforeGallery => isRussian
+      ? 'Сначала сохраните элемент, чтобы загрузить изображения галереи.'
+      : 'Save this item before uploading its gallery images.';
+  String get boatDetails => isRussian ? 'Данные судна' : 'Boat details';
+  String get subtitleType =>
+      isRussian ? 'Подзаголовок / тип' : 'Subtitle / type';
+  String get description => isRussian ? 'Описание' : 'Description';
+  String get lengthOptional => isRussian
+      ? 'Длина в метрах (необязательно)'
+      : 'Length in metres (optional)';
+  String get capacityLabel =>
+      isRussian ? 'Подпись вместимости' : 'Capacity label';
+  String get specifications => isRussian ? 'Характеристики' : 'Specifications';
+  String get onePerLineLabelValue => isRussian
+      ? 'По одной на строку: Название: Значение'
+      : 'One per line: Label: Value';
+  String get experienceDetails =>
+      isRussian ? 'Данные экскурсии' : 'Experience details';
+  String get shortDescription =>
+      isRussian ? 'Краткое описание' : 'Short description';
+  String get fullDescription =>
+      isRussian ? 'Полное описание' : 'Full description';
+  String get destinations => isRussian ? 'Направления' : 'Destinations';
+  String get highlights => isRussian ? 'Особенности' : 'Highlights';
+  String get onePerLine => isRussian ? 'По одному на строку' : 'One per line';
+  String get timingLabelOptional =>
+      isRussian ? 'Подпись времени (необязательно)' : 'Timing label (optional)';
+  String get itinerary => isRussian ? 'Маршрут' : 'Itinerary';
+  String get onePerLineItinerary => isRussian
+      ? 'По одному на строку: Время | Заголовок | Описание'
+      : 'One per line: Time | Title | Description';
+  String get inclusions => isRussian ? 'Что включено' : 'Inclusions';
+  String get priceLabelOptional =>
+      isRussian ? 'Подпись цены (необязательно)' : 'Price label (optional)';
+  String get invalidStableId => isRussian
+      ? 'Введите стабильный ID из букв, цифр и дефисов.'
+      : 'Enter a stable ID using letters, numbers and hyphens.';
+  String get couldNotSaveContent =>
+      isRussian ? 'Не удалось сохранить контент.' : 'Could not save content.';
+  String galleryTitle(int count) =>
+      isRussian ? 'Галерея ($count/10)' : 'Gallery ($count/10)';
+  String get optimizedUploadsHint => isRussian
+      ? 'Загрузки преобразуются в оптимизированные JPEG-файлы и миниатюры.'
+      : 'Uploads are converted to optimized JPEG display and thumbnail files.';
+  String get noImagesUploaded =>
+      isRussian ? 'Изображения ещё не загружены.' : 'No images uploaded yet.';
+  String get coverImage => isRussian ? 'Главное изображение' : 'Cover image';
+  String get setCover => isRussian ? 'Сделать главным' : 'Set cover';
+  String get moveEarlier => isRussian ? 'Переместить раньше' : 'Move earlier';
+  String get moveLater => isRussian ? 'Переместить позже' : 'Move later';
 }

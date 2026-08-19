@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_strings.dart';
 import '../../../models/content_image.dart';
 import '../../../services/image_upload_service.dart';
 
@@ -31,9 +32,7 @@ class _ImageManagerState extends State<ImageManager> {
 
   Future<void> _add() async {
     if (widget.gallery.length >= 10) {
-      setState(
-        () => _error = 'A boat or tour can have a maximum of 10 images.',
-      );
+      setState(() => _error = context.strings.cardImageLimitReached);
       return;
     }
     final file = await _service.pickImage();
@@ -50,8 +49,8 @@ class _ImageManagerState extends State<ImageManager> {
       );
       final gallery = [...widget.gallery, uploaded];
       await widget.onChanged(gallery, widget.coverImageId ?? uploaded.id);
-    } catch (error) {
-      if (mounted) setState(() => _error = '$error');
+    } catch (_) {
+      if (mounted) setState(() => _error = context.strings.couldNotUploadImage);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -71,8 +70,8 @@ class _ImageManagerState extends State<ImageManager> {
           ? (gallery.isEmpty ? null : gallery.first.id)
           : widget.coverImageId;
       await widget.onChanged(gallery, cover);
-    } catch (error) {
-      if (mounted) setState(() => _error = 'Could not delete image: $error');
+    } catch (_) {
+      if (mounted) setState(() => _error = context.strings.couldNotDeleteImage);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -88,114 +87,119 @@ class _ImageManagerState extends State<ImageManager> {
     setState(() => _busy = true);
     try {
       await widget.onChanged(gallery, widget.coverImageId);
-    } catch (error) {
-      if (mounted) setState(() => _error = '$error');
+    } catch (_) {
+      if (mounted) setState(() => _error = context.strings.couldNotSaveContent);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Gallery (${widget.gallery.length}/10)',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          OutlinedButton.icon(
-            onPressed: _busy ? null : _add,
-            icon: const Icon(Icons.add_photo_alternate_outlined),
-            label: const Text('Upload image'),
-          ),
-        ],
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        'Uploads are converted to optimized JPEG display and thumbnail files.',
-      ),
-      if (_error != null)
-        Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(_error!, style: const TextStyle(color: Colors.red)),
-        ),
-      if (_busy)
-        const Padding(
-          padding: EdgeInsets.only(top: 12),
-          child: LinearProgressIndicator(),
-        ),
-      const SizedBox(height: 12),
-      if (widget.gallery.isEmpty)
-        const Text('No images uploaded yet.')
-      else
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: widget.gallery.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            final isCover = item.id == widget.coverImageId;
-            return SizedBox(
-              width: 180,
-              child: Card(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AspectRatio(
-                      aspectRatio: 1.4,
-                      child: Image.network(
-                        item.thumbnailUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
-                            const ColoredBox(color: Colors.black12),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Wrap(
-                        spacing: 2,
-                        runSpacing: 2,
-                        children: [
-                          TextButton(
-                            onPressed: _busy || isCover
-                                ? null
-                                : () =>
-                                      widget.onChanged(widget.gallery, item.id),
-                            child: Text(isCover ? 'Cover image' : 'Set cover'),
-                          ),
-                          IconButton(
-                            tooltip: 'Move earlier',
-                            onPressed: _busy || index == 0
-                                ? null
-                                : () => _move(item, -1),
-                            icon: const Icon(Icons.arrow_back),
-                          ),
-                          IconButton(
-                            tooltip: 'Move later',
-                            onPressed:
-                                _busy || index == widget.gallery.length - 1
-                                ? null
-                                : () => _move(item, 1),
-                            icon: const Icon(Icons.arrow_forward),
-                          ),
-                          IconButton(
-                            tooltip: 'Delete image',
-                            onPressed: _busy ? null : () => _delete(item),
-                            icon: const Icon(Icons.delete_outline),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                strings.galleryTitle(widget.gallery.length),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-            );
-          }).toList(),
+            ),
+            OutlinedButton.icon(
+              onPressed: _busy ? null : _add,
+              icon: const Icon(Icons.add_photo_alternate_outlined),
+              label: Text(strings.uploadImage),
+            ),
+          ],
         ),
-    ],
-  );
+        const SizedBox(height: 8),
+        Text(strings.optimizedUploadsHint),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(_error!, style: const TextStyle(color: Colors.red)),
+          ),
+        if (_busy)
+          const Padding(
+            padding: EdgeInsets.only(top: 12),
+            child: LinearProgressIndicator(),
+          ),
+        const SizedBox(height: 12),
+        if (widget.gallery.isEmpty)
+          Text(strings.noImagesUploaded)
+        else
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: widget.gallery.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              final isCover = item.id == widget.coverImageId;
+              return SizedBox(
+                width: 180,
+                child: Card(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 1.4,
+                        child: Image.network(
+                          item.thumbnailUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) =>
+                              const ColoredBox(color: Colors.black12),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Wrap(
+                          spacing: 2,
+                          runSpacing: 2,
+                          children: [
+                            TextButton(
+                              onPressed: _busy || isCover
+                                  ? null
+                                  : () => widget.onChanged(
+                                      widget.gallery,
+                                      item.id,
+                                    ),
+                              child: Text(
+                                isCover ? strings.coverImage : strings.setCover,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: strings.moveEarlier,
+                              onPressed: _busy || index == 0
+                                  ? null
+                                  : () => _move(item, -1),
+                              icon: const Icon(Icons.arrow_back),
+                            ),
+                            IconButton(
+                              tooltip: strings.moveLater,
+                              onPressed:
+                                  _busy || index == widget.gallery.length - 1
+                                  ? null
+                                  : () => _move(item, 1),
+                              icon: const Icon(Icons.arrow_forward),
+                            ),
+                            IconButton(
+                              tooltip: strings.deleteImage,
+                              onPressed: _busy ? null : () => _delete(item),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+      ],
+    );
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../services/auth_service.dart';
 
@@ -37,7 +38,9 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         password: _password.text,
       );
     } catch (_) {
-      if (mounted) setState(() => _error = 'Неверный email или пароль.');
+      if (mounted) {
+        setState(() => _error = context.strings.invalidCredentials);
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -68,7 +71,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Вход в панель управления',
+                    context.strings.adminSignInTitle,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 24),
@@ -76,9 +79,11 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.username],
-                    decoration: const InputDecoration(labelText: 'Email'),
+                    decoration: InputDecoration(
+                      labelText: context.strings.emailLabel,
+                    ),
                     validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Введите email.'
+                        ? context.strings.enterEmail
                         : null,
                   ),
                   const SizedBox(height: 14),
@@ -86,9 +91,11 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                     controller: _password,
                     obscureText: true,
                     autofillHints: const [AutofillHints.password],
-                    decoration: const InputDecoration(labelText: 'Пароль'),
+                    decoration: InputDecoration(
+                      labelText: context.strings.password,
+                    ),
                     validator: (value) => value == null || value.isEmpty
-                        ? 'Введите пароль.'
+                        ? context.strings.enterPassword
                         : null,
                     onFieldSubmitted: (_) => _signIn(),
                   ),
@@ -111,7 +118,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Войти'),
+                          : Text(context.strings.signIn),
                     ),
                   ),
                 ],

@@ -73,6 +73,32 @@ void main() {
     },
   );
 
+  test('key admin actions are available in Russian and English', () {
+    const english = AppStrings(AppLocale.english);
+    const russian = AppStrings(AppLocale.russian);
+
+    expect(english.addService, 'Add service');
+    expect(russian.addService, 'Добавить услугу');
+    expect(english.addCard, 'Add card');
+    expect(russian.addCard, 'Добавить карточку');
+    expect(english.addImage, 'Add image');
+    expect(russian.addImage, 'Добавить изображение');
+    expect(english.signOut, 'Sign out');
+    expect(russian.signOut, 'Выйти');
+    expect(english.edit, 'Edit');
+    expect(russian.edit, 'Редактировать');
+    expect(english.delete, 'Delete');
+    expect(russian.delete, 'Удалить');
+    expect(english.save, 'Save');
+    expect(russian.save, 'Сохранить');
+    expect(english.cancel, 'Cancel');
+    expect(russian.cancel, 'Отмена');
+    expect(english.expand, 'Expand');
+    expect(russian.expand, 'Развернуть');
+    expect(english.collapse, 'Collapse');
+    expect(russian.collapse, 'Свернуть');
+  });
+
   test('Google reviews response parser accepts minimal callable payload', () {
     final data = GoogleReviewsData.fromMap({
       'rating': 4.8,
