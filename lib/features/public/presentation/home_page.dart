@@ -1540,6 +1540,48 @@ class _CmsContentCardState extends State<_CmsContentCard> {
                     ),
                   ),
                 ),
+                if (widget.expanded && imageUrls.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                    child: SizedBox(
+                      height: 66,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: imageUrls.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) => Semantics(
+                          selected: selectedImageIndex == index,
+                          button: true,
+                          child: InkWell(
+                            onTap: () =>
+                                setState(() => _selectedImageIndex = index),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              width: 88,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: selectedImageIndex == index
+                                      ? AppTheme.aqua
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: Image.network(
+                                  imageUrls[index],
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) =>
+                                      const _ImagePlaceholder(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(18),
                   child: Column(
@@ -1577,48 +1619,6 @@ class _CmsContentCardState extends State<_CmsContentCard> {
                                 : TextOverflow.ellipsis,
                           ),
                         ),
-                      if (widget.expanded && imageUrls.length > 1) ...[
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 66,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: imageUrls.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(width: 8),
-                            itemBuilder: (context, index) => Semantics(
-                              selected: selectedImageIndex == index,
-                              button: true,
-                              child: InkWell(
-                                onTap: () =>
-                                    setState(() => _selectedImageIndex = index),
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  width: 88,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: selectedImageIndex == index
-                                          ? AppTheme.aqua
-                                          : Colors.transparent,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(6),
-                                    child: Image.network(
-                                      imageUrls[index],
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) =>
-                                          const _ImagePlaceholder(),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                       const SizedBox(height: 10),
                       TextButton.icon(
                         onPressed: widget.onToggle,
