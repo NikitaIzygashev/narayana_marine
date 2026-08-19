@@ -20,7 +20,9 @@ Future<void> showBoatDetails(BuildContext context, Boat boat) async {
         if (boat.lengthMeters != null)
           '${context.strings.length}: ${boat.lengthMeters} m',
         if (boat.capacityLabel.isNotEmpty) boat.capacityLabel,
-        ...boat.specifications.map((item) => '${item['label']}: ${item['value']}'),
+        ...boat.specifications.map(
+          (item) => '${item['label']}: ${item['value']}',
+        ),
       ],
     ),
   );
@@ -76,12 +78,19 @@ class _ContentDetailDialogState extends State<_ContentDetailDialog> {
     return Dialog(
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 900, maxHeight: width < 700 ? 720 : 760),
+        constraints: BoxConstraints(
+          maxWidth: 900,
+          maxHeight: width < 700 ? 720 : 760,
+        ),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Gallery(images: widget.gallery, index: _index, onChanged: (value) => setState(() => _index = value)),
+              _Gallery(
+                images: widget.gallery,
+                index: _index,
+                onChanged: (value) => setState(() => _index = value),
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
                 child: Column(
@@ -89,7 +98,12 @@ class _ContentDetailDialogState extends State<_ContentDetailDialog> {
                   children: [
                     Row(
                       children: [
-                        Expanded(child: Text(widget.title, style: Theme.of(context).textTheme.headlineSmall)),
+                        Expanded(
+                          child: Text(
+                            widget.title,
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                        ),
                         IconButton(
                           tooltip: context.strings.closeDetails,
                           onPressed: () => Navigator.of(context).pop(),
@@ -99,7 +113,10 @@ class _ContentDetailDialogState extends State<_ContentDetailDialog> {
                     ),
                     if (widget.subtitle.isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(widget.subtitle, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      Text(
+                        widget.subtitle,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ],
                     if (widget.description.isNotEmpty) ...[
                       const SizedBox(height: 16),
@@ -128,7 +145,11 @@ class _ContentDetailDialogState extends State<_ContentDetailDialog> {
 }
 
 class _Gallery extends StatelessWidget {
-  const _Gallery({required this.images, required this.index, required this.onChanged});
+  const _Gallery({
+    required this.images,
+    required this.index,
+    required this.onChanged,
+  });
 
   final List<ContentImage> images;
   final int index;
@@ -158,17 +179,28 @@ class _Gallery extends StatelessWidget {
               width: double.infinity,
               errorBuilder: (_, _, _) => const ColoredBox(
                 color: Color(0xFF0B6774),
-                child: Center(child: Icon(Icons.broken_image, color: Colors.white)),
+                child: Center(
+                  child: Icon(Icons.broken_image, color: Colors.white),
+                ),
               ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(12),
             child: DecoratedBox(
-              decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Text('${index + 1} / ${images.length}', style: const TextStyle(color: Colors.white)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                child: Text(
+                  '${index + 1} / ${images.length}',
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ),

@@ -5,6 +5,8 @@
   "scripts": {
     "seed:dry-run": "node seed/seed_catalogue.mjs",
     "seed:apply": "node seed/seed_catalogue.mjs --apply",
+    "seed:services:dry-run": "node seed/seed_services.mjs",
+    "seed:services:apply": "node seed/seed_services.mjs --apply",
     "test:rules": "node rules/rules.test.mjs"
   },
   "dependencies": {

@@ -10,14 +10,16 @@ import '../../../core/localization/app_strings.dart';
 import '../../../core/localization/locale_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/responsive.dart';
-import '../../../models/boat.dart';
+import '../../../models/cms_models.dart';
 import '../../../models/google_reviews.dart';
-import '../../../models/media_content.dart';
-import '../../../models/tour.dart';
 import '../../../services/analytics_service.dart';
 import '../../../services/content_repository.dart';
+import '../../../services/content_storage_service.dart';
+import '../../../services/cms_content_service.dart';
 import '../../../services/google_reviews_service.dart';
-import 'widgets/content_detail_dialog.dart';
+import '../../admin/presentation/widgets/admin_card_editor_dialog.dart';
+import '../../../services/auth_service.dart';
+import 'widgets/hero_video_background.dart';
 
 const _headerOffset = 96.0;
 const _googleReviewTextStyle = TextStyle(
@@ -25,10 +27,18 @@ const _googleReviewTextStyle = TextStyle(
 );
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, this.repository, this.googleReviewsService});
+  const HomePage({
+    super.key,
+    this.repository,
+    this.googleReviewsService,
+    this.adminMode = false,
+    this.authService,
+  });
 
   final ContentRepository? repository;
   final GoogleReviewsService? googleReviewsService;
+  final bool adminMode;
+  final AuthService? authService;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -39,15 +49,28 @@ class _HomePageState extends State<HomePage> {
       widget.repository ?? ContentRepository();
   late final GoogleReviewsService _googleReviewsService =
       widget.googleReviewsService ?? FirebaseGoogleReviewsService();
+  late final CmsContentService _cms = CmsContentService(
+    repository: _repository,
+  );
+  final _storage = ContentStorageService();
   final _scrollController = ScrollController();
   final _toursKey = GlobalKey();
   final _whyKey = GlobalKey();
   final _fleetKey = GlobalKey();
   final _contactKey = GlobalKey();
-  late Future<List<Boat>> _boats = _repository.fetchPublishedBoats();
-  late Future<List<Tour>> _tours = _repository.fetchPublishedTours();
-  late Future<List<MediaContent>> _media = _repository
-      .fetchPublishedMediaContent();
+  late Future<HeroMedia?> _hero = _repository.fetchHero();
+  late Future<List<CmsCard>> _cmsTours = _repository.fetchCmsCards(
+    CmsCardKind.tours,
+    admin: widget.adminMode,
+  );
+  late Future<List<CmsCard>> _cmsFleet = _repository.fetchCmsCards(
+    CmsCardKind.boats,
+    admin: widget.adminMode,
+  );
+  late Future<List<GalleryItem>> _gallery = _repository.fetchGallery(
+    admin: widget.adminMode,
+  );
+  late Future<List<ServiceItem>> _services = _repository.fetchServices();
   Future<GoogleReviewsData?>? _reviews;
   String? _reviewsLanguage;
   bool _hasScrolled = false;
@@ -56,6 +79,16 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_updateHeaderState);
+    if (widget.adminMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _cms
+            .cleanPendingDeletes()
+            .then((_) {
+              if (mounted) _refresh();
+            })
+            .catchError((_) {});
+      });
+    }
   }
 
   @override
@@ -96,11 +129,184 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _refresh() async {
     setState(() {
-      _boats = _repository.fetchPublishedBoats();
-      _tours = _repository.fetchPublishedTours();
-      _media = _repository.fetchPublishedMediaContent();
+      _hero = _repository.fetchHero();
+      _cmsTours = _repository.fetchCmsCards(
+        CmsCardKind.tours,
+        admin: widget.adminMode,
+      );
+      _cmsFleet = _repository.fetchCmsCards(
+        CmsCardKind.boats,
+        admin: widget.adminMode,
+      );
+      _gallery = _repository.fetchGallery(admin: widget.adminMode);
+      _services = _repository.fetchServices();
     });
   }
+
+  Future<void> _replaceHero(SiteMediaType type) async {
+    final file = type == SiteMediaType.video
+        ? await _storage.pickVideo()
+        : await _storage.pickImage();
+    if (file == null) return;
+    try {
+      await _cms.replaceHero(file);
+      _refresh();
+    } catch (_) {
+      if (mounted) _message('Не удалось загрузить файл.');
+    }
+  }
+
+  Future<void> _editCard(CmsCardKind kind, [CmsCard? existing]) async {
+    final isNew = existing == null;
+    final card =
+        existing ??
+        CmsCard(
+          id: _repository.newId(kind),
+          titleRu: '',
+          titleEn: '',
+          priceRu: '',
+          priceEn: '',
+          descriptionRu: '',
+          descriptionEn: '',
+          images: const [],
+          order: DateTime.now().millisecondsSinceEpoch,
+          isPublished: true,
+          pendingStorageDeletes: const [],
+        );
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AdminCardEditorDialog(
+        kind: kind,
+        card: card,
+        isNew: isNew,
+        onSave: (next, files, removed) => _cms.saveCard(
+          kind: kind,
+          card: next,
+          isNew: isNew,
+          newImages: files,
+          removedStoragePaths: removed,
+        ),
+      ),
+    );
+    if (changed == true) {
+      _refresh();
+    }
+  }
+
+  Future<void> _deleteCard(CmsCardKind kind, CmsCard card) async {
+    if (!await _confirmDelete(
+      'Удалить карточку?',
+      'Файлы этой карточки также будут удалены с сервера.',
+    )) {
+      return;
+    }
+    try {
+      await _cms.deleteCard(kind, card);
+      _refresh();
+    } catch (_) {
+      if (mounted) {
+        _message(
+          'Не удалось удалить карточку. Очистка будет повторена при следующем входе.',
+        );
+      }
+    }
+  }
+
+  Future<void> _addGallery() async {
+    final current = await _gallery;
+    if (current.length >= 12) {
+      _message('Можно добавить не более 12 изображений.');
+      return;
+    }
+    final file = await _storage.pickImage();
+    if (file == null) {
+      return;
+    }
+    try {
+      await _cms.addGalleryImage(
+        file: file,
+        order: DateTime.now().millisecondsSinceEpoch,
+      );
+      _refresh();
+    } catch (_) {
+      if (mounted) {
+        _message('Не удалось загрузить изображение.');
+      }
+    }
+  }
+
+  Future<void> _deleteGallery(GalleryItem item) async {
+    if (!await _confirmDelete(
+      'Удалить изображение?',
+      'Файл также будет удалён с сервера.',
+    )) {
+      return;
+    }
+    try {
+      await _cms.deleteGalleryItem(item);
+      _refresh();
+    } catch (_) {
+      if (mounted) {
+        _message('Не удалось удалить изображение.');
+      }
+    }
+  }
+
+  Future<void> _addService(String ru, String en) async {
+    final value = ru.trim();
+    if (value.isEmpty) {
+      _message('Введите услугу.');
+      return;
+    }
+    final existing = await _services;
+    if (existing.any((item) => item.textRu.trim() == value)) {
+      _message('Такая услуга уже существует.');
+      return;
+    }
+    await _repository.saveService(
+      ServiceItem(
+        id: _repository.newServiceId(),
+        textRu: value,
+        textEn: en.trim(),
+        order: DateTime.now().millisecondsSinceEpoch,
+      ),
+      isNew: true,
+    );
+    _refresh();
+  }
+
+  Future<void> _deleteService(ServiceItem item) async {
+    try {
+      await _repository.deleteService(item.id);
+      _refresh();
+    } catch (_) {
+      if (mounted) _message('Не удалось удалить услугу.');
+    }
+  }
+
+  Future<bool> _confirmDelete(String title, String body) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(title),
+          content: Text(body),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Отмена'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Удалить'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+
+  void _message(String value) => ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(value)));
 
   @override
   Widget build(BuildContext context) {
@@ -118,22 +324,54 @@ class _HomePageState extends State<HomePage> {
               controller: _scrollController,
               slivers: [
                 SliverToBoxAdapter(
-                  child: _Hero(
+                  child: _AsyncHero(
+                    future: _hero,
+                    adminMode: widget.adminMode,
+                    onReplace: _replaceHero,
                     onTours: () => _scrollTo(_toursKey),
                     onCharter: () => _scrollTo(_fleetKey),
                   ),
                 ),
                 SliverToBoxAdapter(child: _About()),
-                SliverToBoxAdapter(key: _whyKey, child: _WhyNarayana()),
+                SliverToBoxAdapter(
+                  key: _whyKey,
+                  child: _CmsWhyNarayana(
+                    future: _services,
+                    adminMode: widget.adminMode,
+                    onAdd: _addService,
+                    onDelete: _deleteService,
+                  ),
+                ),
                 SliverToBoxAdapter(
                   key: _toursKey,
-                  child: _AsyncTours(future: _tours),
+                  child: _CmsCardsSection(
+                    future: _cmsTours,
+                    kind: CmsCardKind.tours,
+                    adminMode: widget.adminMode,
+                    onAdd: () => _editCard(CmsCardKind.tours),
+                    onEdit: (item) => _editCard(CmsCardKind.tours, item),
+                    onDelete: (item) => _deleteCard(CmsCardKind.tours, item),
+                  ),
                 ),
                 SliverToBoxAdapter(
                   key: _fleetKey,
-                  child: _AsyncFleet(future: _boats),
+                  child: _CmsCardsSection(
+                    future: _cmsFleet,
+                    kind: CmsCardKind.boats,
+                    adminMode: widget.adminMode,
+                    onAdd: () => _editCard(CmsCardKind.boats),
+                    onEdit: (item) => _editCard(CmsCardKind.boats, item),
+                    onDelete: (item) => _deleteCard(CmsCardKind.boats, item),
+                  ),
                 ),
-                SliverToBoxAdapter(child: _MediaContentSection(future: _media)),
+                SliverToBoxAdapter(
+                  child: _CmsGallerySection(
+                    future: _gallery,
+                    adminMode: widget.adminMode,
+                    onAdd: _addGallery,
+                    onDelete: _deleteGallery,
+                  ),
+                ),
                 const SliverToBoxAdapter(child: _B2B()),
                 SliverToBoxAdapter(child: _GoogleReviews(future: _reviews!)),
                 SliverToBoxAdapter(
@@ -150,6 +388,16 @@ class _HomePageState extends State<HomePage> {
             onFleet: () => _scrollTo(_fleetKey),
             onBook: () => _scrollTo(_contactKey),
           ),
+          if (widget.adminMode)
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: FilledButton.icon(
+                onPressed: widget.authService?.signOut,
+                icon: const Icon(Icons.logout),
+                label: const Text('Выйти'),
+              ),
+            ),
         ],
       ),
     );
@@ -215,9 +463,46 @@ class _StickyHeader extends StatelessWidget {
   );
 }
 
-class _Hero extends StatelessWidget {
-  const _Hero({required this.onTours, required this.onCharter});
+class _AsyncHero extends StatelessWidget {
+  const _AsyncHero({
+    required this.future,
+    required this.adminMode,
+    required this.onReplace,
+    required this.onTours,
+    required this.onCharter,
+  });
 
+  final Future<HeroMedia?> future;
+  final bool adminMode;
+  final Future<void> Function(SiteMediaType type) onReplace;
+  final VoidCallback onTours;
+  final VoidCallback onCharter;
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<HeroMedia?>(
+    future: future,
+    builder: (context, snapshot) => _Hero(
+      media: snapshot.data,
+      adminMode: adminMode,
+      onReplace: onReplace,
+      onTours: onTours,
+      onCharter: onCharter,
+    ),
+  );
+}
+
+class _Hero extends StatelessWidget {
+  const _Hero({
+    required this.media,
+    required this.adminMode,
+    required this.onReplace,
+    required this.onTours,
+    required this.onCharter,
+  });
+
+  final HeroMedia? media;
+  final bool adminMode;
+  final Future<void> Function(SiteMediaType type) onReplace;
   final VoidCallback onTours;
   final VoidCallback onCharter;
 
@@ -226,7 +511,7 @@ class _Hero extends StatelessWidget {
     final compact = isCompact(context);
     final narrow = isNarrow(context);
     final strings = context.strings;
-    return Container(
+    final content = Container(
       constraints: BoxConstraints(
         minHeight: narrow
             ? 590
@@ -243,13 +528,6 @@ class _Hero extends StatelessWidget {
             : 210,
         pageGutter(context),
         70,
-      ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppTheme.navy, AppTheme.sea, Color(0xFF2E8B99)],
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,6 +609,61 @@ class _Hero extends StatelessWidget {
           ),
         ],
       ),
+    );
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppTheme.navy, AppTheme.sea, Color(0xFF2E8B99)],
+              ),
+            ),
+          ),
+        ),
+        if (media?.media.type == SiteMediaType.image)
+          Positioned.fill(
+            child: Image.network(
+              media!.media.url,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox.expand(),
+            ),
+          ),
+        if (media?.media.type == SiteMediaType.video)
+          Positioned.fill(child: HeroVideoBackground(url: media!.media.url)),
+        if (media != null)
+          const Positioned.fill(child: ColoredBox(color: Color(0x66000000))),
+        content,
+        if (adminMode)
+          Positioned(
+            right: pageGutter(context),
+            bottom: 20,
+            child: PopupMenuButton<SiteMediaType>(
+              onSelected: onReplace,
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: SiteMediaType.image,
+                  child: Text('Загрузить изображение'),
+                ),
+                PopupMenuItem(
+                  value: SiteMediaType.video,
+                  child: Text('Загрузить видео'),
+                ),
+              ],
+              child: IgnorePointer(
+                child: FilledButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.upload_file),
+                  label: Text(
+                    media == null ? 'Загрузить файл' : 'Обновить файл',
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -859,135 +1192,458 @@ class _About extends StatelessWidget {
   }
 }
 
-class _WhyNarayana extends StatelessWidget {
+class _CmsWhyNarayana extends StatefulWidget {
+  const _CmsWhyNarayana({
+    required this.future,
+    required this.adminMode,
+    required this.onAdd,
+    required this.onDelete,
+  });
+  final Future<List<ServiceItem>> future;
+  final bool adminMode;
+  final Future<void> Function(String ru, String en) onAdd;
+  final Future<void> Function(ServiceItem item) onDelete;
+
+  @override
+  State<_CmsWhyNarayana> createState() => _CmsWhyNarayanaState();
+}
+
+class _CmsWhyNarayanaState extends State<_CmsWhyNarayana> {
+  final _ru = TextEditingController();
+  final _en = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _ru.dispose();
+    _en.dispose();
+    super.dispose();
+  }
+
+  Future<void> _add() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await widget.onAdd(_ru.text, _en.text);
+      if (mounted) {
+        _ru.clear();
+        _en.clear();
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
     return _Section(
       color: AppTheme.sand,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _Eyebrow(strings.whyEyebrow),
-          const SizedBox(height: 14),
-          Text(
-            strings.whyTitle,
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 30),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: strings.whyValues
-                .map(
-                  (value) => Chip(
-                    avatar: const Icon(Icons.check_circle_outline, size: 18),
-                    label: Text(value),
+      child: FutureBuilder<List<ServiceItem>>(
+        future: widget.future,
+        builder: (context, snapshot) {
+          final values = snapshot.data ?? const <ServiceItem>[];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Eyebrow(strings.whyEyebrow),
+              const SizedBox(height: 14),
+              Text(
+                strings.whyTitle,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              if (widget.adminMode) ...[
+                const SizedBox(height: 18),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final vertical = constraints.maxWidth < 620;
+                    final ruField = TextField(
+                      controller: _ru,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Услуга (RU)',
+                      ),
+                    );
+                    final enField = TextField(
+                      controller: _en,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _add(),
+                      decoration: const InputDecoration(
+                        labelText: 'Service (EN), optional',
+                      ),
+                    );
+                    final button = FilledButton.icon(
+                      onPressed: _saving ? null : _add,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Добавить услугу'),
+                    );
+                    return vertical
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ruField,
+                              const SizedBox(height: 10),
+                              enField,
+                              const SizedBox(height: 10),
+                              button,
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Expanded(child: ruField),
+                              const SizedBox(width: 10),
+                              Expanded(child: enField),
+                              const SizedBox(width: 10),
+                              button,
+                            ],
+                          );
+                  },
+                ),
+              ],
+              const SizedBox(height: 30),
+              if (snapshot.connectionState != ConnectionState.done)
+                const Center(child: CircularProgressIndicator())
+              else if (values.isEmpty)
+                const _DevelopmentState()
+              else
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: values
+                      .map(
+                        (value) => Chip(
+                          avatar: const Icon(
+                            Icons.check_circle_outline,
+                            size: 18,
+                          ),
+                          label: Text(
+                            value.textFor(strings.locale.languageCode),
+                          ),
+                          deleteIcon: widget.adminMode
+                              ? const Icon(Icons.close, color: Colors.red)
+                              : null,
+                          onDeleted: widget.adminMode
+                              ? () => widget.onDelete(value)
+                              : null,
+                        ),
+                      )
+                      .toList(),
+                ),
+              const SizedBox(height: 18),
+              Text(strings.whyNote),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CmsCardsSection extends StatelessWidget {
+  const _CmsCardsSection({
+    required this.future,
+    required this.kind,
+    required this.adminMode,
+    required this.onAdd,
+    required this.onEdit,
+    required this.onDelete,
+  });
+  final Future<List<CmsCard>> future;
+  final CmsCardKind kind;
+  final bool adminMode;
+  final VoidCallback onAdd;
+  final Future<void> Function(CmsCard item) onEdit;
+  final Future<void> Function(CmsCard item) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+    final tours = kind == CmsCardKind.tours;
+    return _Section(
+      color: tours ? const Color(0xFFF7FAFA) : null,
+      child: FutureBuilder<List<CmsCard>>(
+        future: future,
+        builder: (context, snapshot) {
+          final items = snapshot.data ?? const <CmsCard>[];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Eyebrow(
+                          tours ? strings.toursEyebrow : strings.fleetEyebrow,
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          tours ? strings.toursTitle : strings.fleetTitle,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (adminMode)
+                    FilledButton.icon(
+                      onPressed: onAdd,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Добавить карточку'),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 30),
+              if (snapshot.connectionState != ConnectionState.done)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(30),
+                    child: CircularProgressIndicator(),
                   ),
                 )
-                .toList(),
-          ),
-          const SizedBox(height: 18),
-          Text(strings.whyNote),
-        ],
+              else if (snapshot.hasError || items.isEmpty)
+                const _DevelopmentState()
+              else
+                _ResponsiveGrid(
+                  itemCount: items.length,
+                  itemBuilder: (index) => _CmsContentCard(
+                    item: items[index],
+                    adminMode: adminMode,
+                    onEdit: () => onEdit(items[index]),
+                    onDelete: () => onDelete(items[index]),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-class _AsyncTours extends StatelessWidget {
-  const _AsyncTours({required this.future});
-  final Future<List<Tour>> future;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = context.strings;
-    return _Section(
-      color: const Color(0xFFF7FAFA),
-      child: FutureBuilder<List<Tour>>(
-        future: future,
-        builder: (context, snapshot) => _ContentState<Tour>(
-          snapshot: snapshot,
-          label: strings.toursEyebrow,
-          title: strings.toursTitle,
-          builder: (tour) => _TourCard(tour: tour),
-        ),
-      ),
-    );
-  }
-}
-
-class _AsyncFleet extends StatelessWidget {
-  const _AsyncFleet({required this.future});
-  final Future<List<Boat>> future;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = context.strings;
-    return _Section(
-      child: FutureBuilder<List<Boat>>(
-        future: future,
-        builder: (context, snapshot) => _ContentState<Boat>(
-          snapshot: snapshot,
-          label: strings.fleetEyebrow,
-          title: strings.fleetTitle,
-          builder: (boat) => _BoatCard(boat: boat),
-        ),
-      ),
-    );
-  }
-}
-
-class _ContentState<T> extends StatelessWidget {
-  const _ContentState({
-    required this.snapshot,
-    required this.label,
-    required this.title,
-    required this.builder,
+class _CmsContentCard extends StatelessWidget {
+  const _CmsContentCard({
+    required this.item,
+    required this.adminMode,
+    required this.onEdit,
+    required this.onDelete,
   });
-  final AsyncSnapshot<List<T>> snapshot;
-  final String label;
-  final String title;
-  final Widget Function(T item) builder;
+  final CmsCard item;
+  final bool adminMode;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final items = snapshot.data ?? [];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final language = context.strings.locale.languageCode;
+    return Stack(
       children: [
-        _Eyebrow(label),
-        const SizedBox(height: 14),
-        Text(title, style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 30),
-        if (snapshot.connectionState != ConnectionState.done)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(30),
-              child: CircularProgressIndicator(),
+        _ContentCard(
+          imageUrl: item.images.isEmpty ? null : item.images.first.url,
+          title: item.titleFor(language),
+          subtitle: item.priceFor(language),
+          description: item.descriptionFor(language),
+          onTap: () => _showCmsDetails(context, item, language),
+        ),
+        if (adminMode)
+          Positioned(
+            top: 6,
+            right: 6,
+            child: Wrap(
+              spacing: 2,
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: IconButton(
+                    tooltip: 'Редактировать',
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit, size: 18),
+                  ),
+                ),
+                CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: IconButton(
+                    tooltip: 'Удалить',
+                    onPressed: onDelete,
+                    color: Colors.red,
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                  ),
+                ),
+              ],
             ),
-          )
-        else if (snapshot.hasError || items.isEmpty)
-          const _DevelopmentState()
-        else
-          _ResponsiveGrid(
-            itemCount: items.length,
-            itemBuilder: (index) => builder(items[index]),
           ),
       ],
+    );
+  }
+
+  Future<void> _showCmsDetails(
+    BuildContext context,
+    CmsCard item,
+    String language,
+  ) => showDialog<void>(
+    context: context,
+    builder: (context) => Dialog(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 760),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Flexible(
+              child: PageView(
+                children: item.images
+                    .map(
+                      (image) => Image.network(
+                        image.url,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const _ImagePlaceholder(),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.titleFor(language),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  if (item.priceFor(language).isNotEmpty)
+                    Text(
+                      item.priceFor(language),
+                      style: const TextStyle(
+                        color: AppTheme.sea,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  if (item.descriptionFor(language).isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(item.descriptionFor(language)),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _CmsGallerySection extends StatelessWidget {
+  const _CmsGallerySection({
+    required this.future,
+    required this.adminMode,
+    required this.onAdd,
+    required this.onDelete,
+  });
+  final Future<List<GalleryItem>> future;
+  final bool adminMode;
+  final VoidCallback onAdd;
+  final Future<void> Function(GalleryItem item) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+    return _Section(
+      color: AppTheme.sand,
+      child: FutureBuilder<List<GalleryItem>>(
+        future: future,
+        builder: (context, snapshot) {
+          final items = snapshot.data ?? const <GalleryItem>[];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Eyebrow(strings.contentEyebrow),
+                        const SizedBox(height: 14),
+                        Text(
+                          strings.contentTitle,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (adminMode)
+                    FilledButton.icon(
+                      onPressed: items.length >= 12 ? null : onAdd,
+                      icon: const Icon(Icons.add_photo_alternate_outlined),
+                      label: const Text('Добавить изображение'),
+                    ),
+                ],
+              ),
+              if (adminMode && items.length >= 12)
+                const Padding(
+                  padding: EdgeInsets.only(top: 10),
+                  child: Text('Можно добавить не более 12 изображений.'),
+                ),
+              if (items.isNotEmpty) ...[
+                const SizedBox(height: 30),
+                SizedBox(
+                  height: 250,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: items.length,
+                    itemBuilder: (context, index) => Padding(
+                      padding: EdgeInsets.only(
+                        right: index == items.length - 1 ? 0 : 16,
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: 1.15,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                items[index].media.url,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) =>
+                                    const _ImagePlaceholder(),
+                              ),
+                            ),
+                            if (adminMode)
+                              Align(
+                                alignment: Alignment.topRight,
+                                child: IconButton(
+                                  onPressed: () => onDelete(items[index]),
+                                  icon: const Icon(Icons.close),
+                                  color: Colors.red,
+                                  tooltip: 'Удалить изображение',
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ] else if (snapshot.connectionState == ConnectionState.done)
+                const Padding(
+                  padding: EdgeInsets.only(top: 22),
+                  child: _DevelopmentState(),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
 
 class _ResponsiveGrid extends StatelessWidget {
-  const _ResponsiveGrid({
-    required this.itemCount,
-    required this.itemBuilder,
-    this.aspectRatio = .83,
-  });
+  const _ResponsiveGrid({required this.itemCount, required this.itemBuilder});
   final int itemCount;
   final Widget Function(int index) itemBuilder;
-  final double aspectRatio;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -1005,41 +1661,11 @@ class _ResponsiveGrid extends StatelessWidget {
           crossAxisCount: columns,
           mainAxisSpacing: 18,
           crossAxisSpacing: 18,
-          childAspectRatio: aspectRatio,
+          childAspectRatio: .83,
         ),
         itemBuilder: (context, index) => itemBuilder(index),
       );
     },
-  );
-}
-
-class _BoatCard extends StatelessWidget {
-  const _BoatCard({required this.boat});
-  final Boat boat;
-  @override
-  Widget build(BuildContext context) => _ContentCard(
-    imageUrl: boat.coverImage?.thumbnailUrl,
-    title: boat.name,
-    subtitle: [
-      boat.subtitle,
-      if (boat.lengthMeters != null) '${boat.lengthMeters} m',
-      boat.capacityLabel,
-    ].where((value) => value.isNotEmpty).join(' • '),
-    description: boat.description,
-    onTap: () => showBoatDetails(context, boat),
-  );
-}
-
-class _TourCard extends StatelessWidget {
-  const _TourCard({required this.tour});
-  final Tour tour;
-  @override
-  Widget build(BuildContext context) => _ContentCard(
-    imageUrl: tour.coverImage?.thumbnailUrl,
-    title: tour.name,
-    subtitle: tour.timingLabel ?? context.strings.earlyBirdAdventure,
-    description: tour.shortDescription,
-    onTap: () => showTourDetails(context, tour),
   );
 }
 
@@ -1131,140 +1757,6 @@ class _ImagePlaceholder extends StatelessWidget {
     color: AppTheme.sea,
     child: Center(child: Icon(Icons.sailing, color: Colors.white, size: 54)),
   );
-}
-
-class _MediaContentSection extends StatelessWidget {
-  const _MediaContentSection({required this.future});
-  final Future<List<MediaContent>> future;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = context.strings;
-    return _Section(
-      color: AppTheme.sand,
-      child: FutureBuilder<List<MediaContent>>(
-        future: future,
-        builder: (context, snapshot) {
-          final items = snapshot.data ?? const <MediaContent>[];
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Eyebrow(strings.contentEyebrow),
-              const SizedBox(height: 14),
-              Text(
-                strings.contentTitle,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              if (items.isNotEmpty) ...[
-                const SizedBox(height: 30),
-                _ResponsiveGrid(
-                  itemCount: items.length,
-                  aspectRatio: 1.05,
-                  itemBuilder: (index) => _MediaCard(item: items[index]),
-                ),
-              ] else if (snapshot.connectionState == ConnectionState.done)
-                const Padding(
-                  padding: EdgeInsets.only(top: 22),
-                  child: _DevelopmentState(),
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _MediaCard extends StatelessWidget {
-  const _MediaCard({required this.item});
-  final MediaContent item;
-
-  Future<void> _open(BuildContext context) async {
-    if (item.type == MediaContentType.video) {
-      await launchUrl(
-        Uri.parse(item.mediaUrl),
-        mode: LaunchMode.externalApplication,
-      );
-      return;
-    }
-    if (!context.mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (context) => Dialog(
-        clipBehavior: Clip.antiAlias,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 960, maxHeight: 760),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Image.network(
-                  item.mediaUrl,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => const _ImagePlaceholder(),
-                ),
-              ),
-              if (item
-                      .titleFor(context.strings.locale.languageCode)
-                      ?.isNotEmpty ??
-                  false)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    item.titleFor(context.strings.locale.languageCode)!,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final title = item.titleFor(context.strings.locale.languageCode);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _open(context),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _NetworkMedia(
-              url: item.type == MediaContentType.video
-                  ? item.thumbnailUrl
-                  : item.mediaUrl,
-            ),
-            if (item.type == MediaContentType.video)
-              const Center(
-                child: CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.black54,
-                  child: Icon(Icons.play_arrow, color: Colors.white, size: 34),
-                ),
-              ),
-            if (title?.isNotEmpty ?? false)
-              Align(
-                alignment: Alignment.bottomLeft,
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.black45,
-                  padding: const EdgeInsets.all(14),
-                  child: Text(
-                    title!,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _B2B extends StatelessWidget {

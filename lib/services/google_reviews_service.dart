@@ -17,7 +17,9 @@ class FirebaseGoogleReviewsService implements GoogleReviewsService {
   final FirebaseFunctions _functions;
 
   @override
-  Future<GoogleReviewsData?> fetchReviews({required String languageCode}) async {
+  Future<GoogleReviewsData?> fetchReviews({
+    required String languageCode,
+  }) async {
     try {
       final result = await _functions
           .httpsCallable('getGoogleReviews')

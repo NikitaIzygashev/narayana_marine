@@ -1,0 +1,18 @@
+[
+  {"id":"premium-catamaran-fleet","textRu":"Премиальный флот катамаранов","textEn":"Premium catamaran fleet","order":10},
+  {"id":"aircraft-style-seating","textRu":"Комфортные кресла авиационного типа","textEn":"Comfortable aircraft-style seating","order":20},
+  {"id":"signature-early-programmes","textRu":"Фирменные ранние программы","textEn":"Signature early-bird departures","order":30},
+  {"id":"rooftop-viewing-deck","textRu":"Просторная верхняя обзорная палуба","textEn":"Spacious rooftop viewing deck","order":40},
+  {"id":"experienced-crew","textRu":"Профессиональная опытная команда","textEn":"Professional, experienced crew","order":50},
+  {"id":"high-safety-standards","textRu":"Высокие стандарты безопасности","textEn":"High safety standards","order":60},
+  {"id":"wifi-on-board","textRu":"Wi-Fi на борту","textEn":"Wi-Fi on board","order":70},
+  {"id":"hotel-transfers","textRu":"Трансфер из отеля","textEn":"Hotel transfers","order":80},
+  {"id":"medical-insurance","textRu":"Медицинская страховка","textEn":"Medical insurance","order":90},
+  {"id":"cold-and-hot-drinks","textRu":"Холодные и горячие напитки","textEn":"Cold and hot drinks","order":100},
+  {"id":"fresh-fruit","textRu":"Свежие фрукты","textEn":"Fresh fruit","order":110},
+  {"id":"complimentary-towels","textRu":"Бесплатные полотенца","textEn":"Complimentary towels","order":120},
+  {"id":"family-and-children","textRu":"Для семей и детей","textEn":"Family-friendly and kids welcome","order":130},
+  {"id":"flexible-private-charters","textRu":"Гибкие частные чартеры","textEn":"Flexible private charters","order":140},
+  {"id":"fast-b2b-support","textRu":"Быстрая B2B-поддержка","textEn":"Fast B2B support","order":150},
+  {"id":"reliable-phuket-operator","textRu":"Надёжный оператор на Пхукете","textEn":"A reliable Phuket operator","order":160}
+]

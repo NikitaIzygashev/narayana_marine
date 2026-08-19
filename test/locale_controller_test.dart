@@ -59,7 +59,7 @@ void main() {
       const english = AppStrings(AppLocale.english);
       const russian = AppStrings(AppLocale.russian);
 
-      expect(english.whyUs, 'Why Us');
+      expect(english.whyUs, 'Why us');
       expect(russian.whyUs, 'Почему мы');
       expect(english.heroEyebrow, 'PHUKET • THAILAND');
       expect(russian.heroEyebrow, 'ПХУКЕТ • ТАИЛАНД');

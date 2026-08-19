@@ -7,35 +7,53 @@ service firebase.storage {
         && request.auth.uid == 'mBqYpkC87AgLsfXOVn65JnjPG6A3';
     }
 
-    function isJpeg() {
-      return request.resource.contentType == 'image/jpeg';
+    function validImage() {
+      return request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp']
+        && request.resource.size <= 10 * 1024 * 1024;
     }
 
-    match /boats/{boatId}/images/{imageId}/display.jpg {
+    function validHeroMedia() {
+      return validImage()
+        || (request.resource.contentType in ['video/mp4', 'video/webm']
+          && request.resource.size <= 100 * 1024 * 1024);
+    }
+
+    match /site/hero/{fileName} {
       allow read: if true;
-      allow create, update: if isAdmin() && isJpeg()
+      allow create, update: if isAdmin() && validHeroMedia();
+      allow delete: if isAdmin();
+    }
+
+    match /excursions/{cardId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && validImage();
+      allow delete: if isAdmin();
+    }
+
+    match /fleet/{cardId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && validImage();
+      allow delete: if isAdmin();
+    }
+
+    match /gallery/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && validImage();
+      allow delete: if isAdmin();
+    }
+
+    // Compatibility for media uploaded by the previous editor.
+    match /boats/{boatId}/images/{imageId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && request.resource.contentType == 'image/jpeg'
         && request.resource.size <= 2500 * 1024;
       allow delete: if isAdmin();
     }
 
-    match /boats/{boatId}/images/{imageId}/thumbnail.jpg {
+    match /tours/{tourId}/images/{imageId}/{fileName} {
       allow read: if true;
-      allow create, update: if isAdmin() && isJpeg()
-        && request.resource.size <= 350 * 1024;
-      allow delete: if isAdmin();
-    }
-
-    match /tours/{tourId}/images/{imageId}/display.jpg {
-      allow read: if true;
-      allow create, update: if isAdmin() && isJpeg()
+      allow create, update: if isAdmin() && request.resource.contentType == 'image/jpeg'
         && request.resource.size <= 2500 * 1024;
-      allow delete: if isAdmin();
-    }
-
-    match /tours/{tourId}/images/{imageId}/thumbnail.jpg {
-      allow read: if true;
-      allow create, update: if isAdmin() && isJpeg()
-        && request.resource.size <= 350 * 1024;
       allow delete: if isAdmin();
     }
   }

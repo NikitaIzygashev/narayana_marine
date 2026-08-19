@@ -30,15 +30,10 @@ class LocaleController extends ChangeNotifier {
   LocaleController({
     required LocalePreferenceStore store,
     required AppLocale initialLocale,
-  }) : this._(
-    store: store,
-    initialLocale: initialLocale,
-  );
+  }) : this._(store: store, initialLocale: initialLocale);
 
-  LocaleController._({
-    required this._store,
-    required AppLocale initialLocale,
-  }) : _locale = initialLocale;
+  LocaleController._({required this._store, required AppLocale initialLocale})
+    : _locale = initialLocale;
 
   final LocalePreferenceStore _store;
   AppLocale _locale;
@@ -60,9 +55,9 @@ class LocaleController extends ChangeNotifier {
 
     final initialLocale =
         savedLocale ??
-            AppLocale.fromBrowserLocale(
-              browserLocale ?? PlatformDispatcher.instance.locale,
-            );
+        AppLocale.fromBrowserLocale(
+          browserLocale ?? PlatformDispatcher.instance.locale,
+        );
 
     return LocaleController(
       store: preferenceStore,

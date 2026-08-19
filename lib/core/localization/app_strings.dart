@@ -35,7 +35,7 @@ class AppStrings {
   String get heroEyebrow =>
       isRussian ? 'ПХУКЕТ • ТАИЛАНД' : 'PHUKET • THAILAND';
   String get toursNav => isRussian ? 'Экскурсии' : 'Tours';
-  String get whyUs => isRussian ? 'Почему мы' : 'Why Us';
+  String get whyUs => isRussian ? 'Почему мы' : 'Why us';
   String get ourFleetNav => isRussian ? 'Наш флот' : 'Our Fleet';
   String get bookNow => isRussian ? 'Забронировать' : 'Book now';
   String get openNavigation =>
@@ -64,43 +64,6 @@ class AppStrings {
   String get whyEyebrow => isRussian ? 'ПОЧЕМУ МЫ' : 'WHY US';
   String get whyTitle =>
       isRussian ? 'Ваш комфорт - наш приоритет.' : 'Your comfort comes first.';
-  List<String> get whyValues => isRussian
-      ? const [
-          'Премиальный флот катамаранов',
-          'Комфортные кресла авиационного типа',
-          'Фирменные ранние программы',
-          'Просторная верхняя обзорная палуба',
-          'Профессиональная опытная команда',
-          'Высокие стандарты безопасности',
-          'Wi‑Fi на борту',
-          'Трансфер из отеля',
-          'Медицинская страховка',
-          'Холодные и горячие напитки',
-          'Свежие фрукты',
-          'Бесплатные полотенца',
-          'Для семей и детей',
-          'Гибкие частные чартеры',
-          'Быстрая B2B-поддержка',
-          'Надёжный оператор на Пхукете',
-        ]
-      : const [
-          'Premium catamaran fleet',
-          'Comfortable aircraft-style seating',
-          'Signature early-bird departures',
-          'Spacious rooftop viewing deck',
-          'Professional, experienced crew',
-          'High safety standards',
-          'Wi-Fi on board',
-          'Hotel transfers',
-          'Medical insurance',
-          'Cold and hot drinks',
-          'Fresh fruit',
-          'Complimentary towels',
-          'Family-friendly and kids welcome',
-          'Flexible private charters',
-          'Fast B2B support',
-          'A reliable Phuket operator',
-        ];
   String get whyNote => isRussian
       ? '*Актуальный состав услуг зависит от судна и программы. Уточняйте у менеджеров.'
       : '*Inclusions vary by vessel and tour. Please check the latest details with our team.';

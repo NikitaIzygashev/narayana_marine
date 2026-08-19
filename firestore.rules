@@ -7,108 +7,117 @@ service cloud.firestore {
         && request.auth.uid == 'mBqYpkC87AgLsfXOVn65JnjPG6A3';
     }
 
-    function validImageGallery(data) {
-      return data.gallery is list && data.gallery.size() <= 10
-        && (data.coverImageId == null || data.coverImageId is string);
+    function validMedia(value) {
+      return value is map
+        && value.keys().hasOnly(['url', 'storagePath', 'type'])
+        && value.keys().hasAll(['url', 'storagePath', 'type'])
+        && value.url is string
+        && value.storagePath is string
+        && (value.type == 'image' || value.type == 'video');
     }
 
-    function validBoat(data) {
+    function validCard(data) {
       return data.keys().hasOnly([
-          'name', 'subtitle', 'description', 'lengthMeters', 'capacityLabel',
-          'specifications', 'gallery', 'coverImageId', 'isPublished',
-          'sortOrder', 'createdAt', 'updatedAt'
+          'titleRu', 'titleEn', 'priceRu', 'priceEn', 'descriptionRu',
+          'descriptionEn', 'images', 'order', 'isPublished',
+          'pendingStorageDeletes', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasAll([
-          'name', 'subtitle', 'description', 'lengthMeters', 'capacityLabel',
-          'specifications', 'gallery', 'coverImageId', 'isPublished',
-          'sortOrder', 'createdAt', 'updatedAt'
+          'titleRu', 'titleEn', 'priceRu', 'priceEn', 'descriptionRu',
+          'descriptionEn', 'images', 'order', 'isPublished',
+          'pendingStorageDeletes', 'createdAt', 'updatedAt'
         ])
-        && data.name is string
-        && data.subtitle is string
-        && data.description is string
-        && (data.lengthMeters == null || data.lengthMeters is number)
-        && data.capacityLabel is string
-        && data.specifications is list
+        && data.titleRu is string
+        && data.titleEn is string
+        && data.priceRu is string
+        && data.priceEn is string
+        && data.descriptionRu is string
+        && data.descriptionEn is string
+        && data.images is list
+        && data.images.size() <= 10
+        && data.order is int
         && data.isPublished is bool
-        && data.sortOrder is int
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp
-        && validImageGallery(data);
-    }
-
-    function validTour(data) {
-      return data.keys().hasOnly([
-          'name', 'shortDescription', 'fullDescription', 'destinations',
-          'highlights', 'timingLabel', 'itinerary', 'inclusions', 'priceLabel',
-          'gallery', 'coverImageId', 'isPublished', 'sortOrder', 'createdAt',
-          'updatedAt'
-        ])
-        && data.keys().hasAll([
-          'name', 'shortDescription', 'fullDescription', 'destinations',
-          'highlights', 'timingLabel', 'itinerary', 'inclusions', 'priceLabel',
-          'gallery', 'coverImageId', 'isPublished', 'sortOrder', 'createdAt',
-          'updatedAt'
-        ])
-        && data.name is string
-        && data.shortDescription is string
-        && data.fullDescription is string
-        && data.destinations is list
-        && data.highlights is list
-        && (data.timingLabel == null || data.timingLabel is string)
-        && data.itinerary is list
-        && data.inclusions is list
-        && (data.priceLabel == null || data.priceLabel is string)
-        && data.isPublished is bool
-        && data.sortOrder is int
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp
-        && validImageGallery(data);
-    }
-
-    function validMediaContent(data) {
-      return data.keys().hasOnly([
-          'type', 'mediaUrl', 'thumbnailUrl', 'titleRu', 'titleEn',
-          'sortOrder', 'isPublished', 'createdAt', 'updatedAt'
-        ])
-        && data.keys().hasAll([
-          'type', 'mediaUrl', 'sortOrder', 'isPublished', 'createdAt',
-          'updatedAt'
-        ])
-        && (data.type == 'image' || data.type == 'video')
-        && data.mediaUrl is string
-        && (data.thumbnailUrl == null || data.thumbnailUrl is string)
-        && (data.titleRu == null || data.titleRu is string)
-        && (data.titleEn == null || data.titleEn is string)
-        && data.sortOrder is int
-        && data.isPublished is bool
+        && data.pendingStorageDeletes is list
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
 
+    function validGallery(data) {
+      return data.keys().hasOnly([
+          'media', 'order', 'isPublished', 'pendingStorageDeletes',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasAll([
+          'media', 'order', 'isPublished', 'pendingStorageDeletes',
+          'createdAt', 'updatedAt'
+        ])
+        && validMedia(data.media)
+        && data.media.type == 'image'
+        && data.order is int
+        && data.isPublished is bool
+        && data.pendingStorageDeletes is list
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validService(data) {
+      return data.keys().hasOnly(['textRu', 'textEn', 'order', 'createdAt', 'updatedAt'])
+        && data.keys().hasAll(['textRu', 'textEn', 'order', 'createdAt', 'updatedAt'])
+        && data.textRu is string
+        && data.textEn is string
+        && data.order is int
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validHero(data) {
+      return data.keys().hasOnly(['media', 'pendingStorageDeletes', 'updatedAt'])
+        && data.keys().hasAll(['media', 'pendingStorageDeletes', 'updatedAt'])
+        && validMedia(data.media)
+        && data.pendingStorageDeletes is list
+        && data.updatedAt is timestamp;
+    }
+
+    match /site/hero {
+      allow get: if true;
+      allow create: if isAdmin() && validHero(request.resource.data);
+      allow update: if isAdmin() && validHero(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
     match /boats/{boatId} {
       allow get, list: if isAdmin() || resource.data.isPublished == true;
-      allow create: if isAdmin() && validBoat(request.resource.data);
+      allow create: if isAdmin() && validCard(request.resource.data);
       allow update: if isAdmin()
         && request.resource.data.createdAt == resource.data.createdAt
-        && validBoat(request.resource.data);
+        && validCard(request.resource.data);
       allow delete: if isAdmin();
     }
 
     match /tours/{tourId} {
       allow get, list: if isAdmin() || resource.data.isPublished == true;
-      allow create: if isAdmin() && validTour(request.resource.data);
+      allow create: if isAdmin() && validCard(request.resource.data);
       allow update: if isAdmin()
         && request.resource.data.createdAt == resource.data.createdAt
-        && validTour(request.resource.data);
+        && validCard(request.resource.data);
       allow delete: if isAdmin();
     }
 
     match /content/{contentId} {
       allow get, list: if isAdmin() || resource.data.isPublished == true;
-      allow create: if isAdmin() && validMediaContent(request.resource.data);
+      allow create: if isAdmin() && validGallery(request.resource.data);
       allow update: if isAdmin()
         && request.resource.data.createdAt == resource.data.createdAt
-        && validMediaContent(request.resource.data);
+        && validGallery(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /services/{serviceId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && validService(request.resource.data);
+      allow update: if isAdmin()
+        && request.resource.data.createdAt == resource.data.createdAt
+        && validService(request.resource.data);
       allow delete: if isAdmin();
     }
   }

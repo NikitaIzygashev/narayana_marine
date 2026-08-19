@@ -27,11 +27,17 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
   Future<void> _signIn() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      await widget.authService.signIn(email: _email.text, password: _password.text);
+      await widget.authService.signIn(
+        email: _email.text,
+        password: _password.text,
+      );
     } catch (_) {
-      if (mounted) setState(() => _error = 'Unable to sign in. Check your credentials and try again.');
+      if (mounted) setState(() => _error = 'Неверный email или пароль.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -48,18 +54,68 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
             padding: const EdgeInsets.all(28),
             child: Form(
               key: _formKey,
-              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('NARAYANA MARINE', style: TextStyle(color: AppTheme.sea, fontWeight: FontWeight.w800, letterSpacing: 1.4)),
-                const SizedBox(height: 10),
-                Text('Administrator sign in', style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 24),
-                TextFormField(controller: _email, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.username], decoration: const InputDecoration(labelText: 'Email'), validator: (value) => value == null || value.trim().isEmpty ? 'Enter your email.' : null),
-                const SizedBox(height: 14),
-                TextFormField(controller: _password, obscureText: true, autofillHints: const [AutofillHints.password], decoration: const InputDecoration(labelText: 'Password'), validator: (value) => value == null || value.isEmpty ? 'Enter your password.' : null, onFieldSubmitted: (_) => _signIn()),
-                if (_error != null) Padding(padding: const EdgeInsets.only(top: 14), child: Text(_error!, style: const TextStyle(color: Colors.red))),
-                const SizedBox(height: 22),
-                SizedBox(width: double.infinity, child: FilledButton(onPressed: _loading ? null : _signIn, child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Sign in'))),
-              ]),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'NARAYANA MARINE',
+                    style: TextStyle(
+                      color: AppTheme.sea,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Вход в панель управления',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _email,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.username],
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Введите email.'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _password,
+                    obscureText: true,
+                    autofillHints: const [AutofillHints.password],
+                    decoration: const InputDecoration(labelText: 'Пароль'),
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Введите пароль.'
+                        : null,
+                    onFieldSubmitted: (_) => _signIn(),
+                  ),
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 14),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _loading ? null : _signIn,
+                      child: _loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Войти'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

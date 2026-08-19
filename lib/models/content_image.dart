@@ -18,22 +18,22 @@ class ContentImage {
   final int height;
 
   factory ContentImage.fromMap(Map<String, dynamic> map) => ContentImage(
-        id: map['id'] as String? ?? '',
-        displayUrl: map['displayUrl'] as String? ?? '',
-        thumbnailUrl: map['thumbnailUrl'] as String? ?? '',
-        displayPath: map['displayPath'] as String? ?? '',
-        thumbnailPath: map['thumbnailPath'] as String? ?? '',
-        width: (map['width'] as num?)?.round() ?? 0,
-        height: (map['height'] as num?)?.round() ?? 0,
-      );
+    id: map['id'] as String? ?? '',
+    displayUrl: map['displayUrl'] as String? ?? '',
+    thumbnailUrl: map['thumbnailUrl'] as String? ?? '',
+    displayPath: map['displayPath'] as String? ?? '',
+    thumbnailPath: map['thumbnailPath'] as String? ?? '',
+    width: (map['width'] as num?)?.round() ?? 0,
+    height: (map['height'] as num?)?.round() ?? 0,
+  );
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'displayUrl': displayUrl,
-        'thumbnailUrl': thumbnailUrl,
-        'displayPath': displayPath,
-        'thumbnailPath': thumbnailPath,
-        'width': width,
-        'height': height,
-      };
+    'id': id,
+    'displayUrl': displayUrl,
+    'thumbnailUrl': thumbnailUrl,
+    'displayPath': displayPath,
+    'thumbnailPath': thumbnailPath,
+    'width': width,
+    'height': height,
+  };
 }

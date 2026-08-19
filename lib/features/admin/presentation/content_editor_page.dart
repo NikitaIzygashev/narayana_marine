@@ -8,7 +8,8 @@ import '../../../services/image_upload_service.dart';
 import 'image_manager.dart';
 
 class ContentEditorPage extends StatefulWidget {
-  const ContentEditorPage({super.key, this.boat, this.tour, this.isBoat = true}) : assert(boat == null || tour == null);
+  const ContentEditorPage({super.key, this.boat, this.tour, this.isBoat = true})
+    : assert(boat == null || tour == null);
   final Boat? boat;
   final Tour? tour;
   final bool isBoat;
@@ -45,7 +46,9 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
   @override
   void initState() {
     super.initState();
-    _isBoat = widget.boat != null ? true : (widget.tour != null ? false : widget.isBoat);
+    _isBoat = widget.boat != null
+        ? true
+        : (widget.tour != null ? false : widget.isBoat);
     _boat = widget.boat;
     _tour = widget.tour;
     _isNew = _boat == null && _tour == null;
@@ -60,7 +63,9 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
     _description.text = value.description;
     _length.text = value.lengthMeters?.toString() ?? '';
     _capacity.text = value.capacityLabel;
-    _specifications.text = value.specifications.map((item) => '${item['label']}: ${item['value']}').join('\n');
+    _specifications.text = value.specifications
+        .map((item) => '${item['label']}: ${item['value']}')
+        .join('\n');
     _published = value.isPublished;
   }
 
@@ -72,7 +77,12 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
     _destinations.text = value.destinations.join('\n');
     _highlights.text = value.highlights.join('\n');
     _timing.text = value.timingLabel ?? '';
-    _itinerary.text = value.itinerary.map((item) => '${item['time'] ?? ''} | ${item['title'] ?? ''} | ${item['description'] ?? ''}').join('\n');
+    _itinerary.text = value.itinerary
+        .map(
+          (item) =>
+              '${item['time'] ?? ''} | ${item['title'] ?? ''} | ${item['description'] ?? ''}',
+        )
+        .join('\n');
     _inclusions.text = value.inclusions.join('\n');
     _price.text = value.priceLabel ?? '';
     _published = value.isPublished;
@@ -80,50 +90,163 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
 
   @override
   void dispose() {
-    for (final controller in [_id, _name, _subtitle, _description, _length, _capacity, _specifications, _shortDescription, _destinations, _highlights, _timing, _itinerary, _inclusions, _price]) { controller.dispose(); }
+    for (final controller in [
+      _id,
+      _name,
+      _subtitle,
+      _description,
+      _length,
+      _capacity,
+      _specifications,
+      _shortDescription,
+      _destinations,
+      _highlights,
+      _timing,
+      _itinerary,
+      _inclusions,
+      _price,
+    ]) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
-  String _stableId() => _id.text.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-|-$'), '');
-  List<String> _lines(TextEditingController controller) => controller.text.split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
-  List<Map<String, String>> _pairs(TextEditingController controller) => _lines(controller).map((line) { final split = line.split(':'); return {'label': split.first.trim(), 'value': split.skip(1).join(':').trim()}; }).where((item) => item['label']!.isNotEmpty && item['value']!.isNotEmpty).toList();
-  List<Map<String, String>> _itineraryItems() => _lines(_itinerary).map((line) { final split = line.split('|').map((item) => item.trim()).toList(); return {'time': split.isEmpty ? '' : split[0], 'title': split.length > 1 ? split[1] : '', 'description': split.length > 2 ? split.skip(2).join(' | ') : ''}; }).where((item) => item['title']!.isNotEmpty).toList();
+  String _stableId() => _id.text
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'^-|-$'), '');
+  List<String> _lines(TextEditingController controller) => controller.text
+      .split('\n')
+      .map((line) => line.trim())
+      .where((line) => line.isNotEmpty)
+      .toList();
+  List<Map<String, String>> _pairs(TextEditingController controller) =>
+      _lines(controller)
+          .map((line) {
+            final split = line.split(':');
+            return {
+              'label': split.first.trim(),
+              'value': split.skip(1).join(':').trim(),
+            };
+          })
+          .where(
+            (item) => item['label']!.isNotEmpty && item['value']!.isNotEmpty,
+          )
+          .toList();
+  List<Map<String, String>> _itineraryItems() => _lines(_itinerary)
+      .map((line) {
+        final split = line.split('|').map((item) => item.trim()).toList();
+        return {
+          'time': split.isEmpty ? '' : split[0],
+          'title': split.length > 1 ? split[1] : '',
+          'description': split.length > 2 ? split.skip(2).join(' | ') : '',
+        };
+      })
+      .where((item) => item['title']!.isNotEmpty)
+      .toList();
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final id = _isNew ? _stableId() : (_boat?.id ?? _tour!.id);
     if (!RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(id)) {
-      setState(() => _error = 'Enter a stable ID using letters, numbers and hyphens.');
+      setState(
+        () => _error = 'Enter a stable ID using letters, numbers and hyphens.',
+      );
       return;
     }
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       if (_isBoat) {
-        final value = Boat(id: id, name: _name.text.trim(), subtitle: _subtitle.text.trim(), description: _description.text.trim(), lengthMeters: double.tryParse(_length.text.trim()), capacityLabel: _capacity.text.trim(), specifications: _pairs(_specifications), gallery: _boat?.gallery ?? const [], coverImageId: _boat?.coverImageId, isPublished: _published, sortOrder: _boat?.sortOrder ?? 10);
+        final value = Boat(
+          id: id,
+          name: _name.text.trim(),
+          subtitle: _subtitle.text.trim(),
+          description: _description.text.trim(),
+          lengthMeters: double.tryParse(_length.text.trim()),
+          capacityLabel: _capacity.text.trim(),
+          specifications: _pairs(_specifications),
+          gallery: _boat?.gallery ?? const [],
+          coverImageId: _boat?.coverImageId,
+          isPublished: _published,
+          sortOrder: _boat?.sortOrder ?? 10,
+        );
         await _repository.saveBoat(value, isNew: _isNew);
         _boat = value;
       } else {
-        final value = Tour(id: id, name: _name.text.trim(), shortDescription: _shortDescription.text.trim(), fullDescription: _description.text.trim(), destinations: _lines(_destinations), highlights: _lines(_highlights), timingLabel: _timing.text.trim().isEmpty ? null : _timing.text.trim(), itinerary: _itineraryItems(), inclusions: _lines(_inclusions), priceLabel: _price.text.trim().isEmpty ? null : _price.text.trim(), gallery: _tour?.gallery ?? const [], coverImageId: _tour?.coverImageId, isPublished: _published, sortOrder: _tour?.sortOrder ?? 10);
+        final value = Tour(
+          id: id,
+          name: _name.text.trim(),
+          shortDescription: _shortDescription.text.trim(),
+          fullDescription: _description.text.trim(),
+          destinations: _lines(_destinations),
+          highlights: _lines(_highlights),
+          timingLabel: _timing.text.trim().isEmpty ? null : _timing.text.trim(),
+          itinerary: _itineraryItems(),
+          inclusions: _lines(_inclusions),
+          priceLabel: _price.text.trim().isEmpty ? null : _price.text.trim(),
+          gallery: _tour?.gallery ?? const [],
+          coverImageId: _tour?.coverImageId,
+          isPublished: _published,
+          sortOrder: _tour?.sortOrder ?? 10,
+        );
         await _repository.saveTour(value, isNew: _isNew);
         _tour = value;
       }
-      if (mounted) setState(() { _isNew = false; _id.text = id; });
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Content saved.')));
+      if (mounted) {
+        setState(() {
+          _isNew = false;
+          _id.text = id;
+        });
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Content saved.')));
+      }
     } catch (error) {
-      if (mounted) setState(() => _error = '$error');
+      if (mounted) {
+        setState(() => _error = '$error');
+      }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 
-  Future<void> _galleryChanged(List<ContentImage> gallery, String? coverImageId) async {
-    if (_isNew) return;
+  Future<void> _galleryChanged(
+    List<ContentImage> gallery,
+    String? coverImageId,
+  ) async {
+    if (_isNew) {
+      return;
+    }
     if (_isBoat) {
       await _repository.updateBoatGallery(_boat!.id, gallery, coverImageId);
-      if (mounted) setState(() => _boat = _boat!.copyWith(gallery: gallery, coverImageId: coverImageId, clearCover: coverImageId == null));
+      if (mounted) {
+        setState(
+          () => _boat = _boat!.copyWith(
+            gallery: gallery,
+            coverImageId: coverImageId,
+            clearCover: coverImageId == null,
+          ),
+        );
+      }
     } else {
       await _repository.updateTourGallery(_tour!.id, gallery, coverImageId);
-      if (mounted) setState(() => _tour = _tour!.copyWith(gallery: gallery, coverImageId: coverImageId, clearCover: coverImageId == null));
+      if (mounted) {
+        setState(
+          () => _tour = _tour!.copyWith(
+            gallery: gallery,
+            coverImageId: coverImageId,
+            clearCover: coverImageId == null,
+          ),
+        );
+      }
     }
   }
 
@@ -131,26 +254,76 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
   Widget build(BuildContext context) {
     final title = '${_isNew ? 'Add' : 'Edit'} ${_isBoat ? 'boat' : 'tour'}';
     return Scaffold(
-      appBar: AppBar(title: Text(title), actions: [TextButton(onPressed: _saving ? null : _save, child: const Text('Save'))]),
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : _save,
+            child: const Text('Save'),
+          ),
+        ],
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
             _heading('Identity'),
-            TextFormField(controller: _id, enabled: _isNew, decoration: const InputDecoration(labelText: 'Stable ID / slug'), validator: (value) => value == null || value.trim().isEmpty ? 'Required.' : null),
+            TextFormField(
+              controller: _id,
+              enabled: _isNew,
+              decoration: const InputDecoration(labelText: 'Stable ID / slug'),
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? 'Required.' : null,
+            ),
             const SizedBox(height: 14),
-            TextFormField(controller: _name, decoration: const InputDecoration(labelText: 'Name'), validator: (value) => value == null || value.trim().isEmpty ? 'Required.' : null),
+            TextFormField(
+              controller: _name,
+              decoration: const InputDecoration(labelText: 'Name'),
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? 'Required.' : null,
+            ),
             const SizedBox(height: 14),
-            SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('Published / active'), subtitle: const Text('Only published items appear on the public website.'), value: _published, onChanged: (value) => setState(() => _published = value)),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Published / active'),
+              subtitle: const Text(
+                'Only published items appear on the public website.',
+              ),
+              value: _published,
+              onChanged: (value) => setState(() => _published = value),
+            ),
             const Divider(height: 42),
             if (_isBoat) ..._boatFields() else ..._tourFields(),
-            if (_error != null) Padding(padding: const EdgeInsets.only(top: 18), child: Text(_error!, style: const TextStyle(color: Colors.red))),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 18),
+                child: Text(_error!, style: const TextStyle(color: Colors.red)),
+              ),
             const SizedBox(height: 20),
-            FilledButton(onPressed: _saving ? null : _save, child: _saving ? const CircularProgressIndicator() : const Text('Save content')),
+            FilledButton(
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const CircularProgressIndicator()
+                  : const Text('Save content'),
+            ),
             const SizedBox(height: 34),
             const Divider(),
-            if (_isNew) const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Text('Save this item before uploading its gallery images.')) else ImageManager(contentId: _boat?.id ?? _tour!.id, kind: _isBoat ? ContentKind.boats : ContentKind.tours, gallery: _boat?.gallery ?? _tour!.gallery, coverImageId: _boat?.coverImageId ?? _tour!.coverImageId, onChanged: _galleryChanged),
+            if (_isNew)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'Save this item before uploading its gallery images.',
+                ),
+              )
+            else
+              ImageManager(
+                contentId: _boat?.id ?? _tour!.id,
+                kind: _isBoat ? ContentKind.boats : ContentKind.tours,
+                gallery: _boat?.gallery ?? _tour!.gallery,
+                coverImageId: _boat?.coverImageId ?? _tour!.coverImageId,
+                onChanged: _galleryChanged,
+              ),
             const SizedBox(height: 40),
           ],
         ),
@@ -160,35 +333,111 @@ class _ContentEditorPageState extends State<ContentEditorPage> {
 
   List<Widget> _boatFields() => [
     _heading('Boat details'),
-    TextFormField(controller: _subtitle, decoration: const InputDecoration(labelText: 'Subtitle / type')),
+    TextFormField(
+      controller: _subtitle,
+      decoration: const InputDecoration(labelText: 'Subtitle / type'),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _description, minLines: 3, maxLines: 6, decoration: const InputDecoration(labelText: 'Description')),
+    TextFormField(
+      controller: _description,
+      minLines: 3,
+      maxLines: 6,
+      decoration: const InputDecoration(labelText: 'Description'),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _length, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Length in metres (optional)')),
+    TextFormField(
+      controller: _length,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: const InputDecoration(
+        labelText: 'Length in metres (optional)',
+      ),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _capacity, decoration: const InputDecoration(labelText: 'Capacity label')),
+    TextFormField(
+      controller: _capacity,
+      decoration: const InputDecoration(labelText: 'Capacity label'),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _specifications, minLines: 3, maxLines: 8, decoration: const InputDecoration(labelText: 'Specifications', helperText: 'One per line: Label: Value')),
+    TextFormField(
+      controller: _specifications,
+      minLines: 3,
+      maxLines: 8,
+      decoration: const InputDecoration(
+        labelText: 'Specifications',
+        helperText: 'One per line: Label: Value',
+      ),
+    ),
   ];
 
   List<Widget> _tourFields() => [
     _heading('Experience details'),
-    TextFormField(controller: _shortDescription, minLines: 2, maxLines: 4, decoration: const InputDecoration(labelText: 'Short description')),
+    TextFormField(
+      controller: _shortDescription,
+      minLines: 2,
+      maxLines: 4,
+      decoration: const InputDecoration(labelText: 'Short description'),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _description, minLines: 4, maxLines: 8, decoration: const InputDecoration(labelText: 'Full description')),
+    TextFormField(
+      controller: _description,
+      minLines: 4,
+      maxLines: 8,
+      decoration: const InputDecoration(labelText: 'Full description'),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _destinations, minLines: 2, maxLines: 6, decoration: const InputDecoration(labelText: 'Destinations', helperText: 'One per line')),
+    TextFormField(
+      controller: _destinations,
+      minLines: 2,
+      maxLines: 6,
+      decoration: const InputDecoration(
+        labelText: 'Destinations',
+        helperText: 'One per line',
+      ),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _highlights, minLines: 2, maxLines: 6, decoration: const InputDecoration(labelText: 'Highlights', helperText: 'One per line')),
+    TextFormField(
+      controller: _highlights,
+      minLines: 2,
+      maxLines: 6,
+      decoration: const InputDecoration(
+        labelText: 'Highlights',
+        helperText: 'One per line',
+      ),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _timing, decoration: const InputDecoration(labelText: 'Timing label (optional)')),
+    TextFormField(
+      controller: _timing,
+      decoration: const InputDecoration(labelText: 'Timing label (optional)'),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _itinerary, minLines: 3, maxLines: 8, decoration: const InputDecoration(labelText: 'Itinerary', helperText: 'One per line: Time | Title | Description')),
+    TextFormField(
+      controller: _itinerary,
+      minLines: 3,
+      maxLines: 8,
+      decoration: const InputDecoration(
+        labelText: 'Itinerary',
+        helperText: 'One per line: Time | Title | Description',
+      ),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _inclusions, minLines: 2, maxLines: 6, decoration: const InputDecoration(labelText: 'Inclusions', helperText: 'One per line')),
+    TextFormField(
+      controller: _inclusions,
+      minLines: 2,
+      maxLines: 6,
+      decoration: const InputDecoration(
+        labelText: 'Inclusions',
+        helperText: 'One per line',
+      ),
+    ),
     const SizedBox(height: 14),
-    TextFormField(controller: _price, decoration: const InputDecoration(labelText: 'Price label (optional)')),
+    TextFormField(
+      controller: _price,
+      decoration: const InputDecoration(labelText: 'Price label (optional)'),
+    ),
   ];
 
-  Widget _heading(String value) => Padding(padding: const EdgeInsets.only(bottom: 14), child: Text(value, style: Theme.of(context).textTheme.titleLarge));
+  Widget _heading(String value) => Padding(
+    padding: const EdgeInsets.only(bottom: 14),
+    child: Text(value, style: Theme.of(context).textTheme.titleLarge),
+  );
 }

@@ -18,8 +18,14 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: Colors.white,
       textTheme: const TextTheme(
-        headlineLarge: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -1.6),
-        headlineMedium: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -1),
+        headlineLarge: TextStyle(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -1.6,
+        ),
+        headlineMedium: TextStyle(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -1,
+        ),
         titleLarge: TextStyle(fontWeight: FontWeight.w700),
         bodyLarge: TextStyle(height: 1.55),
       ),

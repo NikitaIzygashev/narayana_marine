@@ -41,43 +41,49 @@ class Tour {
   }
 
   factory Tour.fromMap(String id, Map<String, dynamic> map) => Tour(
-        id: id,
-        name: map['name'] as String? ?? '',
-        shortDescription: map['shortDescription'] as String? ?? '',
-        fullDescription: map['fullDescription'] as String? ?? '',
-        destinations: ((map['destinations'] as List<dynamic>?) ?? []).map((item) => '$item').toList(),
-        highlights: ((map['highlights'] as List<dynamic>?) ?? []).map((item) => '$item').toList(),
-        timingLabel: map['timingLabel'] as String?,
-        itinerary: ((map['itinerary'] as List<dynamic>?) ?? [])
-            .whereType<Map>()
-            .map((item) => item.map((key, value) => MapEntry('$key', '$value')))
-            .toList(),
-        inclusions: ((map['inclusions'] as List<dynamic>?) ?? []).map((item) => '$item').toList(),
-        priceLabel: map['priceLabel'] as String?,
-        gallery: ((map['gallery'] as List<dynamic>?) ?? [])
-            .whereType<Map>()
-            .map((item) => ContentImage.fromMap(Map<String, dynamic>.from(item)))
-            .toList(),
-        coverImageId: map['coverImageId'] as String?,
-        isPublished: map['isPublished'] as bool? ?? false,
-        sortOrder: (map['sortOrder'] as num?)?.round() ?? 0,
-      );
+    id: id,
+    name: map['name'] as String? ?? '',
+    shortDescription: map['shortDescription'] as String? ?? '',
+    fullDescription: map['fullDescription'] as String? ?? '',
+    destinations: ((map['destinations'] as List<dynamic>?) ?? [])
+        .map((item) => '$item')
+        .toList(),
+    highlights: ((map['highlights'] as List<dynamic>?) ?? [])
+        .map((item) => '$item')
+        .toList(),
+    timingLabel: map['timingLabel'] as String?,
+    itinerary: ((map['itinerary'] as List<dynamic>?) ?? [])
+        .whereType<Map>()
+        .map((item) => item.map((key, value) => MapEntry('$key', '$value')))
+        .toList(),
+    inclusions: ((map['inclusions'] as List<dynamic>?) ?? [])
+        .map((item) => '$item')
+        .toList(),
+    priceLabel: map['priceLabel'] as String?,
+    gallery: ((map['gallery'] as List<dynamic>?) ?? [])
+        .whereType<Map>()
+        .map((item) => ContentImage.fromMap(Map<String, dynamic>.from(item)))
+        .toList(),
+    coverImageId: map['coverImageId'] as String?,
+    isPublished: map['isPublished'] as bool? ?? false,
+    sortOrder: (map['sortOrder'] as num?)?.round() ?? 0,
+  );
 
   Map<String, dynamic> toMap() => {
-        'name': name,
-        'shortDescription': shortDescription,
-        'fullDescription': fullDescription,
-        'destinations': destinations,
-        'highlights': highlights,
-        'timingLabel': timingLabel,
-        'itinerary': itinerary,
-        'inclusions': inclusions,
-        'priceLabel': priceLabel,
-        'gallery': gallery.map((image) => image.toMap()).toList(),
-        'coverImageId': coverImageId,
-        'isPublished': isPublished,
-        'sortOrder': sortOrder,
-      };
+    'name': name,
+    'shortDescription': shortDescription,
+    'fullDescription': fullDescription,
+    'destinations': destinations,
+    'highlights': highlights,
+    'timingLabel': timingLabel,
+    'itinerary': itinerary,
+    'inclusions': inclusions,
+    'priceLabel': priceLabel,
+    'gallery': gallery.map((image) => image.toMap()).toList(),
+    'coverImageId': coverImageId,
+    'isPublished': isPublished,
+    'sortOrder': sortOrder,
+  };
 
   Tour copyWith({
     List<ContentImage>? gallery,
@@ -85,21 +91,20 @@ class Tour {
     bool clearCover = false,
     bool? isPublished,
     int? sortOrder,
-  }) =>
-      Tour(
-        id: id,
-        name: name,
-        shortDescription: shortDescription,
-        fullDescription: fullDescription,
-        destinations: destinations,
-        highlights: highlights,
-        timingLabel: timingLabel,
-        itinerary: itinerary,
-        inclusions: inclusions,
-        priceLabel: priceLabel,
-        gallery: gallery ?? this.gallery,
-        coverImageId: clearCover ? null : (coverImageId ?? this.coverImageId),
-        isPublished: isPublished ?? this.isPublished,
-        sortOrder: sortOrder ?? this.sortOrder,
-      );
+  }) => Tour(
+    id: id,
+    name: name,
+    shortDescription: shortDescription,
+    fullDescription: fullDescription,
+    destinations: destinations,
+    highlights: highlights,
+    timingLabel: timingLabel,
+    itinerary: itinerary,
+    inclusions: inclusions,
+    priceLabel: priceLabel,
+    gallery: gallery ?? this.gallery,
+    coverImageId: clearCover ? null : (coverImageId ?? this.coverImageId),
+    isPublished: isPublished ?? this.isPublished,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
 }
