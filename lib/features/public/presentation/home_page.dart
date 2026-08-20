@@ -2135,15 +2135,26 @@ class _Contact extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _ContactAction(
-                  icon: const FaIcon(FontAwesomeIcons.instagram, size: 20),
-                  label: 'Instagram',
-                  onTap: () => _launch(SiteContact.instagramUri),
-                ),
-                _ContactAction(
-                  icon: const FaIcon(FontAwesomeIcons.facebookF, size: 20),
-                  label: 'Facebook',
-                  onTap: () => _launch(SiteContact.facebookUri),
+                Wrap(
+                  spacing: 24,
+                  runSpacing: 12,
+                  children: [
+                    _ContactAction(
+                      icon: const FaIcon(FontAwesomeIcons.instagram, size: 20),
+                      label: 'Instagram',
+                      onTap: () => _launch(SiteContact.instagramUri),
+                    ),
+                    _ContactAction(
+                      icon: const FaIcon(FontAwesomeIcons.facebookF, size: 20),
+                      label: 'Facebook',
+                      onTap: () => _launch(SiteContact.facebookUri),
+                    ),
+                    _ContactAction(
+                      icon: const FaIcon(FontAwesomeIcons.telegram, size: 20),
+                      label: 'Telegram',
+                      onTap: () => _launch(SiteContact.telegramUri),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 _ContactLabel(label: strings.emailLabel),
