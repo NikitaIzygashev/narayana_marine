@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -457,47 +456,45 @@ class _StickyHeader extends StatelessWidget {
   final VoidCallback onBook;
 
   @override
-  Widget build(BuildContext context) => Positioned(
-    top: 0,
-    left: 0,
-    right: 0,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      decoration: BoxDecoration(
-        color: hasScrolled
-            ? AppTheme.navy.withValues(alpha: .88)
-            : Colors.transparent,
-        boxShadow: hasScrolled
-            ? const [BoxShadow(color: Colors.black26, blurRadius: 18)]
-            : null,
-      ),
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: hasScrolled ? 10 : 0,
-            sigmaY: hasScrolled ? 10 : 0,
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                pageGutter(context),
-                14,
-                pageGutter(context),
-                14,
-              ),
-              child: _Nav(
-                onTours: onTours,
-                onWhyUs: onWhyUs,
-                onFleet: onFleet,
-                onBook: onBook,
-              ),
+  Widget build(BuildContext context) {
+    final compactNavigation = MediaQuery.sizeOf(context).width < 960;
+    final verticalPadding = compactNavigation ? 14.0 : 5.0;
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .70),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: hasScrolled ? .12 : .08),
+              blurRadius: hasScrolled ? 18 : 12,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              pageGutter(context),
+              verticalPadding,
+              pageGutter(context),
+              verticalPadding,
+            ),
+            child: _Nav(
+              onTours: onTours,
+              onWhyUs: onWhyUs,
+              onFleet: onFleet,
+              onBook: onBook,
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _AsyncHero extends StatelessWidget {
@@ -792,7 +789,7 @@ class _Nav extends StatelessWidget {
             onPressed: onBook,
             style: FilledButton.styleFrom(
               backgroundColor: AppTheme.aqua,
-              foregroundColor: Colors.white,
+              foregroundColor: Colors.black,
               shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
             ),
@@ -804,7 +801,7 @@ class _Nav extends StatelessWidget {
   }
 
   static final _headerLinkStyle = TextButton.styleFrom(
-    foregroundColor: Colors.white,
+    foregroundColor: AppTheme.navy,
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 12),
     textStyle: const TextStyle(fontWeight: FontWeight.w600),
   );
@@ -913,7 +910,7 @@ class _MobileNavigationMenuState extends State<_MobileNavigationMenu> {
           child: const SizedBox(
             width: 48,
             height: 48,
-            child: Icon(Icons.menu, color: Colors.white),
+            child: Icon(Icons.menu, color: AppTheme.navy),
           ),
         ),
       ),
@@ -1074,7 +1071,7 @@ class _LanguageSelectorState extends State<_LanguageSelector> {
             hoverColor: Colors.white12,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.white54),
+                border: Border.all(color: AppTheme.navy.withValues(alpha: .24)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
@@ -1090,7 +1087,7 @@ class _LanguageSelectorState extends State<_LanguageSelector> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppTheme.navy,
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                         ),
@@ -1098,7 +1095,7 @@ class _LanguageSelectorState extends State<_LanguageSelector> {
                     ),
                     const Icon(
                       Icons.keyboard_arrow_down,
-                      color: Colors.white,
+                      color: AppTheme.navy,
                       size: 18,
                     ),
                   ],
@@ -1165,59 +1162,25 @@ class _BrandBlock extends StatelessWidget {
   final bool narrow;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: 'Narayana Marine',
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset(
-          'assets/logo.png',
-          width: narrow
-              ? 30
-              : compact
-              ? 34
-              : 44,
-          height: narrow
-              ? 30
-              : compact
-              ? 34
-              : 44,
-          fit: BoxFit.contain,
-        ),
+  Widget build(BuildContext context) {
+    final wordmarkHeight = narrow
+        ? 16.0
+        : compact
+        ? 20.0
+        : 36.0;
 
-        if (!narrow) ...[
-          SizedBox(width: compact ? 7 : 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'NARAYANA',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: compact ? 14 : 17,
-                  fontWeight: FontWeight.w800,
-                  height: 1,
-                  letterSpacing: compact ? .8 : 1.3,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'MARINE',
-                style: TextStyle(
-                  color: AppTheme.aqua,
-                  fontSize: compact ? 7 : 9,
-                  fontWeight: FontWeight.w800,
-                  height: 1,
-                  letterSpacing: compact ? 2 : 3,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ],
-    ),
-  );
+    return Semantics(
+      child: SizedBox(
+        height: wordmarkHeight,
+        child: Image.asset(
+          'assets/logo.png',
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
+        ),
+      ),
+    );
+  }
 }
 
 class _Section extends StatelessWidget {
