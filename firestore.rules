@@ -19,7 +19,12 @@ service cloud.firestore {
     }
 
     function validCardImage(value, folder, cardId) {
-      return validMedia(value)
+      return value is map
+        && value.keys().hasOnly(['url', 'storagePath', 'type'])
+        && value.keys().hasAll(['url', 'storagePath', 'type'])
+        && value.url is string
+        && value.url.size() > 0
+        && value.storagePath is string
         && value.type == 'image'
         && value.storagePath.matches(
           '^' + folder + '/' + cardId + '/[^/]+\\.(jpg|jpeg|png|webp)$'

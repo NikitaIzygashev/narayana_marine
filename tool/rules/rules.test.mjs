@@ -4,7 +4,13 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import {
+  deleteDoc,
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore';
 import { getBytes, ref, uploadBytes } from 'firebase/storage';
 
 const adminUid = 'mBqYpkC87AgLsfXOVn65JnjPG6A3';
@@ -32,10 +38,13 @@ const testEnv = await initializeTestEnvironment({
   storage: { host: storageHost, port: storagePort, rules: storageRules },
 });
 
-const timestamps = { createdAt: new Date(), updatedAt: new Date() };
+const timestamps = {
+  createdAt: serverTimestamp(),
+  updatedAt: serverTimestamp(),
+};
 const image = {
-  url: 'https://example.test/fleet/test-boat/photo.jpg',
-  storagePath: 'fleet/test-boat/photo.jpg',
+  url: 'https://example.test/fleet/published-boat/photo.jpg',
+  storagePath: 'fleet/published-boat/photo.jpg',
   type: 'image',
 };
 const draftBoat = {
@@ -88,11 +97,25 @@ try {
   await assertFails(
     setDoc(doc(admin.firestore(), 'boats', 'too-many-images'), {
       ...publishedBoat,
-      images: Array.from({ length: 11 }, () => image),
+      images: Array.from({ length: 11 }, (_, index) => ({
+        ...image,
+        url: `https://example.test/fleet/too-many-images/${index}.jpg`,
+        storagePath: `fleet/too-many-images/${index}.jpg`,
+      })),
     }),
   );
   await assertSucceeds(
     setDoc(doc(admin.firestore(), 'boats', 'published-boat'), publishedBoat),
+  );
+  await assertSucceeds(
+    setDoc(doc(admin.firestore(), 'boats', 'seven-image-boat'), {
+      ...publishedBoat,
+      images: Array.from({ length: 7 }, (_, index) => ({
+        ...image,
+        url: `https://example.test/fleet/seven-image-boat/${index}.jpg`,
+        storagePath: `fleet/seven-image-boat/${index}.jpg`,
+      })),
+    }),
   );
   await assertSucceeds(
     getDoc(doc(visitor.firestore(), 'boats', 'published-boat')),

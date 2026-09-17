@@ -77,6 +77,10 @@ void main() {
       card.validationIssue(forPublish: false),
       CmsCardValidationIssue.draftTitleRequired,
     );
+    expect(
+      card.copyWith(titleEn: 'Draft').validationIssue(forPublish: false),
+      isNull,
+    );
   });
 
   test('publication requires bilingual content and a cover image', () {

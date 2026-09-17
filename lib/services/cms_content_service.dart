@@ -1,5 +1,6 @@
-import 'package:image_picker/image_picker.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../models/cms_models.dart';
 import 'content_repository.dart';
@@ -58,6 +59,7 @@ class CmsContentService {
       );
     }
     final uploaded = <StoredMedia>[];
+    var stage = 'resolving images';
     try {
       final resolvedImages = <StoredMedia>[];
       for (final item in images) {
@@ -65,6 +67,7 @@ class CmsContentService {
           resolvedImages.add(item.existing!);
           continue;
         }
+        stage = 'uploading image to Storage';
         final uploadedImage = await _storage.uploadCardImage(
           kind: kind,
           cardId: card.id,
@@ -82,8 +85,10 @@ class CmsContentService {
       );
       final issue = next.validationIssue(forPublish: next.isPublished);
       if (issue != null) throw CmsCardValidationException(issue);
+      stage = 'writing the Firestore card document';
       await _repository.saveCmsCard(kind, next, isNew: isNew);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      _logCardSaveFailure(stage, error, stackTrace);
       try {
         await _storage.deleteAll(uploaded.map((item) => item.storagePath));
       } catch (cleanupError) {
@@ -98,6 +103,18 @@ class CmsContentService {
     } catch (error) {
       debugPrint('CMS cleanup queued after card save: ${error.runtimeType}');
     }
+  }
+
+  void _logCardSaveFailure(String stage, Object error, StackTrace stackTrace) {
+    if (error is FirebaseException) {
+      debugPrint(
+        'CMS card save failed during $stage: '
+        'plugin=${error.plugin}, code=${error.code}, message=${error.message}',
+      );
+    } else {
+      debugPrint('CMS card save failed during $stage: $error');
+    }
+    debugPrintStack(stackTrace: stackTrace, maxFrames: 8);
   }
 
   Future<void> deleteCard(CmsCardKind kind, CmsCard card) async {
@@ -186,11 +203,18 @@ class CmsContentService {
 }
 
 class CardImageInput {
-  const CardImageInput.existing(this.existing) : file = null;
-  const CardImageInput.newFile(this.file) : existing = null;
+  const CardImageInput.existing(this.existing)
+    : file = null,
+      previewBytes = null;
+
+  CardImageInput.newFile(XFile file)
+    : existing = null,
+      file = file,
+      previewBytes = file.readAsBytes();
 
   final StoredMedia? existing;
   final XFile? file;
+  final Future<Uint8List>? previewBytes;
 }
 
 class CmsCardValidationException implements Exception {

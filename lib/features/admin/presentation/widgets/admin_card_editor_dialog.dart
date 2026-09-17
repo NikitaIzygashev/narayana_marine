@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -175,7 +177,14 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
       );
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
-      debugPrint('CMS card save failed: ${error.runtimeType}');
+      if (error is FirebaseException) {
+        debugPrint(
+          'CMS editor received Firebase failure: '
+          'plugin=${error.plugin}, code=${error.code}, message=${error.message}',
+        );
+      } else {
+        debugPrint('CMS editor received save failure: $error');
+      }
       if (mounted) setState(() => _error = _messageFor(error));
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -409,19 +418,7 @@ class _ImageInputTile extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         child: Column(
           children: [
-            AspectRatio(
-              aspectRatio: 1.35,
-              child: input.existing == null
-                  ? Center(
-                      child: Text(
-                        input.file!.name,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                    )
-                  : Image.network(input.existing!.url, fit: BoxFit.cover),
-            ),
+            AspectRatio(aspectRatio: 1.35, child: _ImagePreview(input: input)),
             if (isCover)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -461,4 +458,57 @@ class _ImageInputTile extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _ImagePreview extends StatelessWidget {
+  const _ImagePreview({required this.input});
+
+  final CardImageInput input;
+
+  @override
+  Widget build(BuildContext context) {
+    final existing = input.existing;
+    if (existing != null) {
+      return Image.network(
+        existing.url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _ImageFilename(input: input),
+      );
+    }
+    return FutureBuilder<Uint8List>(
+      future: input.previewBytes,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Image.memory(
+            snapshot.data!,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => _ImageFilename(input: input),
+          );
+        }
+        if (snapshot.hasError) return _ImageFilename(input: input);
+        return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+      },
+    );
+  }
+}
+
+class _ImageFilename extends StatelessWidget {
+  const _ImageFilename({required this.input});
+
+  final CardImageInput input;
+
+  @override
+  Widget build(BuildContext context) {
+    final localName = input.file?.name;
+    final remotePath = input.existing?.storagePath;
+    final filename = localName ?? remotePath?.split('/').last ?? '';
+    return Center(
+      child: Text(
+        filename,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
 }

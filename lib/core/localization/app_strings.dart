@@ -35,7 +35,7 @@ class AppStrings {
   String get heroEyebrow =>
       isRussian ? 'ПХУКЕТ • ТАИЛАНД' : 'PHUKET • THAILAND';
   String get toursNav => isRussian ? 'Экскурсии' : 'Tours';
-  String get whyUs => isRussian ? 'Почему мы' : 'Why us';
+  String get whyUs => isRussian ? 'Почему Narayana' : 'Why Narayana';
   String get ourFleetNav => isRussian ? 'Наш флот' : 'Our Fleet';
   String get bookNow => isRussian ? 'Забронировать' : 'Book now';
   String get openNavigation =>

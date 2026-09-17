@@ -21,7 +21,7 @@ import '../../../services/auth_service.dart';
 import 'widgets/fullscreen_image_viewer.dart';
 import 'widgets/hero_video_background.dart';
 
-const _headerOffset = 96.0;
+const _headerOffset = 84.0;
 const _googleReviewTextStyle = TextStyle(
   fontFamilyFallback: ['NotoSansThai', 'NotoColorEmoji'],
 );
@@ -425,8 +425,10 @@ class _HomePageState extends State<HomePage> {
               onBook: () async {
                 AnalyticsService.cta('header_book_whatsapp');
 
-                final uri = Uri.parse('https://wa.me/66868856885');
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                await launchUrl(
+                  SiteContact.whatsappUri,
+                  mode: LaunchMode.externalApplication,
+                );
               },
             ),
             if (widget.adminMode)
@@ -464,7 +466,7 @@ class _StickyHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compactNavigation = MediaQuery.sizeOf(context).width < 960;
-    final verticalPadding = compactNavigation ? 14.0 : 10.0;
+    final verticalPadding = compactNavigation ? 14.0 : 15.0;
     return Positioned(
       top: 0,
       left: 0,
