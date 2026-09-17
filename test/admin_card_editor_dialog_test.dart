@@ -43,7 +43,8 @@ void main() {
               descriptionEn: '',
               images: const [],
               order: 0,
-              isPublished: true,
+              isPublished: false,
+              isDeleting: false,
               pendingStorageDeletes: const [],
             ),
             onSave: (_, _, _) async {},
@@ -63,6 +64,7 @@ void main() {
     expect(find.text('Add'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Publish'), findsOneWidget);
 
     final saveButton = find.text('Save');
 
@@ -72,7 +74,10 @@ void main() {
     await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('This field is required.'), findsNWidgets(2));
+    expect(
+      find.text('Add a Russian or English title before saving a draft.'),
+      findsOneWidget,
+    );
 
     final addButton = find.text('Add');
 

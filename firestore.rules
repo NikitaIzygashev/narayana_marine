@@ -12,19 +12,52 @@ service cloud.firestore {
         && value.keys().hasOnly(['url', 'storagePath', 'type'])
         && value.keys().hasAll(['url', 'storagePath', 'type'])
         && value.url is string
+        && value.url.size() > 0
         && value.storagePath is string
+        && value.storagePath.size() > 0
         && (value.type == 'image' || value.type == 'video');
     }
 
-    function validCard(data) {
+    function validCardImage(value, folder, cardId) {
+      return validMedia(value)
+        && value.type == 'image'
+        && value.storagePath.matches(
+          '^' + folder + '/' + cardId + '/[^/]+\\.(jpg|jpeg|png|webp)$'
+        );
+    }
+
+    function validCardImages(images, folder, cardId) {
+      return images is list
+        && images.size() <= 10
+        && (images.size() < 1 || validCardImage(images[0], folder, cardId))
+        && (images.size() < 2 || validCardImage(images[1], folder, cardId))
+        && (images.size() < 3 || validCardImage(images[2], folder, cardId))
+        && (images.size() < 4 || validCardImage(images[3], folder, cardId))
+        && (images.size() < 5 || validCardImage(images[4], folder, cardId))
+        && (images.size() < 6 || validCardImage(images[5], folder, cardId))
+        && (images.size() < 7 || validCardImage(images[6], folder, cardId))
+        && (images.size() < 8 || validCardImage(images[7], folder, cardId))
+        && (images.size() < 9 || validCardImage(images[8], folder, cardId))
+        && (images.size() < 10 || validCardImage(images[9], folder, cardId));
+    }
+
+    function validPublishedCard(data) {
+      return data.titleRu.size() > 0
+        && data.titleEn.size() > 0
+        && data.descriptionRu.size() > 0
+        && data.descriptionEn.size() > 0
+        && data.images.size() >= 1;
+    }
+
+    function validCard(data, folder, cardId) {
       return data.keys().hasOnly([
           'titleRu', 'titleEn', 'priceRu', 'priceEn', 'descriptionRu',
-          'descriptionEn', 'images', 'order', 'isPublished',
+          'descriptionEn', 'images', 'order', 'isPublished', 'isDeleting',
           'pendingStorageDeletes', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasAll([
           'titleRu', 'titleEn', 'priceRu', 'priceEn', 'descriptionRu',
-          'descriptionEn', 'images', 'order', 'isPublished',
+          'descriptionEn', 'images', 'order', 'isPublished', 'isDeleting',
           'pendingStorageDeletes', 'createdAt', 'updatedAt'
         ])
         && data.titleRu is string
@@ -33,13 +66,16 @@ service cloud.firestore {
         && data.priceEn is string
         && data.descriptionRu is string
         && data.descriptionEn is string
-        && data.images is list
-        && data.images.size() <= 10
+        && (data.titleRu.size() > 0 || data.titleEn.size() > 0)
+        && validCardImages(data.images, folder, cardId)
         && data.order is int
         && data.isPublished is bool
+        && data.isDeleting is bool
+        && (!data.isDeleting || !data.isPublished)
         && data.pendingStorageDeletes is list
         && data.createdAt is timestamp
-        && data.updatedAt is timestamp;
+        && data.updatedAt is timestamp
+        && (!data.isPublished || validPublishedCard(data));
     }
 
     function validGallery(data) {
@@ -87,19 +123,21 @@ service cloud.firestore {
 
     match /boats/{boatId} {
       allow get, list: if isAdmin() || resource.data.isPublished == true;
-      allow create: if isAdmin() && validCard(request.resource.data);
+      allow create: if isAdmin()
+        && validCard(request.resource.data, 'fleet', boatId);
       allow update: if isAdmin()
         && request.resource.data.createdAt == resource.data.createdAt
-        && validCard(request.resource.data);
+        && validCard(request.resource.data, 'fleet', boatId);
       allow delete: if isAdmin();
     }
 
     match /tours/{tourId} {
       allow get, list: if isAdmin() || resource.data.isPublished == true;
-      allow create: if isAdmin() && validCard(request.resource.data);
+      allow create: if isAdmin()
+        && validCard(request.resource.data, 'excursions', tourId);
       allow update: if isAdmin()
         && request.resource.data.createdAt == resource.data.createdAt
-        && validCard(request.resource.data);
+        && validCard(request.resource.data, 'excursions', tourId);
       allow delete: if isAdmin();
     }
 

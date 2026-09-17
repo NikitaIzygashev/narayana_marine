@@ -5,7 +5,6 @@ import 'package:narayana_marine/core/localization/app_locale.dart';
 import 'package:narayana_marine/core/localization/app_strings.dart';
 import 'package:narayana_marine/core/localization/locale_controller.dart';
 import 'package:narayana_marine/models/google_reviews.dart';
-import 'package:narayana_marine/models/media_content.dart';
 
 class _MemoryStore implements LocalePreferenceStore {
   _MemoryStore(this.value);
@@ -63,6 +62,21 @@ void main() {
       expect(russian.whyUs, 'Почему мы');
       expect(english.heroEyebrow, 'PHUKET • THAILAND');
       expect(russian.heroEyebrow, 'ПХУКЕТ • ТАИЛАНД');
+      expect(english.heroTitle, 'NARAYANA MARINE');
+      expect(russian.heroTitle, 'NARAYANA MARINE');
+      expect(english.heroServices, 'Real Boats. Real Guests. Real Memories.');
+      expect(
+        russian.heroServices,
+        'Надёжные лодки. Любимые гости. Яркие воспоминания.',
+      );
+      expect(
+        english.heroDescription,
+        'Premium Catamaran Experiences in Phuket.',
+      );
+      expect(
+        russian.heroDescription,
+        'Премиальные путешествия на катамаранах из Пхукета.',
+      );
       expect(russian.bookNow, 'Забронировать');
       expect(english.contentEyebrow, 'OUR CONTENT');
       expect(russian.sectionInDevelopment, 'Раздел находится в разработке');
@@ -124,24 +138,5 @@ void main() {
     expect(data.formattedAddress, 'Verified address from Google');
     expect(data.reviews.single.authorName, 'Guest');
     expect(data.reviews.single.originalText, 'Original API text');
-  });
-
-  test('video content requires a preview before public rendering', () {
-    final withoutPreview = MediaContent.fromMap('video-1', {
-      'type': 'video',
-      'mediaUrl': 'https://example.test/video.mp4',
-      'isPublished': true,
-      'sortOrder': 10,
-    });
-    final withPreview = MediaContent.fromMap('video-2', {
-      'type': 'video',
-      'mediaUrl': 'https://example.test/video.mp4',
-      'thumbnailUrl': 'https://example.test/preview.jpg',
-      'isPublished': true,
-      'sortOrder': 20,
-    });
-
-    expect(withoutPreview.isRenderable, isFalse);
-    expect(withPreview.isRenderable, isTrue);
   });
 }

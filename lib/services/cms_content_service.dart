@@ -1,4 +1,5 @@
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/cms_models.dart';
 import 'content_repository.dart';
@@ -48,39 +49,55 @@ class CmsContentService {
     required CmsCardKind kind,
     required CmsCard card,
     required bool isNew,
-    required List<XFile> newImages,
+    required List<CardImageInput> images,
     required Set<String> removedStoragePaths,
   }) async {
-    if (card.images.length + newImages.length > 10) {
-      throw StateError('Можно добавить не более 10 изображений.');
+    if (images.length > 10) {
+      throw const CmsCardValidationException(
+        CmsCardValidationIssue.imageLimitExceeded,
+      );
     }
     final uploaded = <StoredMedia>[];
     try {
-      for (final file in newImages) {
-        uploaded.add(
-          await _storage.uploadCardImage(
-            kind: kind,
-            cardId: card.id,
-            file: file,
-          ),
+      final resolvedImages = <StoredMedia>[];
+      for (final item in images) {
+        if (item.existing != null) {
+          resolvedImages.add(item.existing!);
+          continue;
+        }
+        final uploadedImage = await _storage.uploadCardImage(
+          kind: kind,
+          cardId: card.id,
+          file: item.file!,
         );
+        uploaded.add(uploadedImage);
+        resolvedImages.add(uploadedImage);
       }
-      final removedPaths = card.images
-          .where((image) => removedStoragePaths.contains(image.storagePath))
-          .expand((image) => image.storagePaths);
       final next = card.copyWith(
-        images: [...card.images, ...uploaded],
+        images: resolvedImages,
         pendingStorageDeletes: {
           ...card.pendingStorageDeletes,
-          ...removedPaths,
+          ...removedStoragePaths,
         }.toList(),
       );
+      final issue = next.validationIssue(forPublish: next.isPublished);
+      if (issue != null) throw CmsCardValidationException(issue);
       await _repository.saveCmsCard(kind, next, isNew: isNew);
     } catch (_) {
-      await _storage.deleteAll(uploaded.map((item) => item.storagePath));
+      try {
+        await _storage.deleteAll(uploaded.map((item) => item.storagePath));
+      } catch (cleanupError) {
+        debugPrint(
+          'CMS uploaded-image cleanup failed: ${cleanupError.runtimeType}',
+        );
+      }
       rethrow;
     }
-    await cleanPendingDeletes();
+    try {
+      await cleanPendingDeletes();
+    } catch (error) {
+      debugPrint('CMS cleanup queued after card save: ${error.runtimeType}');
+    }
   }
 
   Future<void> deleteCard(CmsCardKind kind, CmsCard card) async {
@@ -131,19 +148,23 @@ class CmsContentService {
       await _repository.clearHeroPendingDeletes(heroPaths);
     }
     for (final kind in CmsCardKind.values) {
-      final cards = await _repository.fetchCmsCards(kind, admin: true);
+      final cards = await _repository.fetchCmsCards(
+        kind,
+        admin: true,
+        includeDeleting: true,
+      );
       for (final card in cards.where(
         (item) => item.pendingStorageDeletes.isNotEmpty,
       )) {
         await _storage.deleteAll(card.pendingStorageDeletes);
-        if (card.isPublished) {
+        if (card.isDeleting) {
+          await _repository.deleteCmsCard(kind, card.id);
+        } else {
           await _repository.clearCmsCardPendingDeletes(
             kind,
             card.id,
             card.pendingStorageDeletes,
           );
-        } else {
-          await _repository.deleteCmsCard(kind, card.id);
         }
       }
     }
@@ -162,6 +183,22 @@ class CmsContentService {
       }
     }
   }
+}
+
+class CardImageInput {
+  const CardImageInput.existing(this.existing) : file = null;
+  const CardImageInput.newFile(this.file) : existing = null;
+
+  final StoredMedia? existing;
+  final XFile? file;
+}
+
+class CmsCardValidationException implements Exception {
+  const CmsCardValidationException(this.issue);
+  final CmsCardValidationIssue issue;
+
+  @override
+  String toString() => 'CMS card validation failed: ${issue.name}';
 }
 
 class HeroMediaDeletionCoordinator {

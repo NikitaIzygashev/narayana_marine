@@ -28,6 +28,7 @@ void main() {
       images: [media],
       order: 10,
       isPublished: true,
+      isDeleting: false,
       pendingStorageDeletes: ['fleet/boat/old.jpg'],
     );
 
@@ -38,6 +39,97 @@ void main() {
     expect(restored.images, hasLength(1));
     expect(restored.images.single.storagePath, media.storagePath);
     expect(restored.pendingStorageDeletes, ['fleet/boat/old.jpg']);
+    expect(
+      card.toMap().keys,
+      unorderedEquals([
+        'titleRu',
+        'titleEn',
+        'priceRu',
+        'priceEn',
+        'descriptionRu',
+        'descriptionEn',
+        'images',
+        'order',
+        'isPublished',
+        'isDeleting',
+        'pendingStorageDeletes',
+      ]),
+    );
+  });
+
+  test('a draft needs a title in at least one language', () {
+    const card = CmsCard(
+      id: 'draft',
+      titleRu: '',
+      titleEn: '',
+      priceRu: '',
+      priceEn: '',
+      descriptionRu: '',
+      descriptionEn: '',
+      images: [],
+      order: 10,
+      isPublished: false,
+      isDeleting: false,
+      pendingStorageDeletes: [],
+    );
+
+    expect(
+      card.validationIssue(forPublish: false),
+      CmsCardValidationIssue.draftTitleRequired,
+    );
+  });
+
+  test('publication requires bilingual content and a cover image', () {
+    const draft = CmsCard(
+      id: 'draft',
+      titleRu: 'Катамаран',
+      titleEn: 'Catamaran',
+      priceRu: '',
+      priceEn: '',
+      descriptionRu: 'Описание',
+      descriptionEn: 'Description',
+      images: [],
+      order: 10,
+      isPublished: true,
+      isDeleting: false,
+      pendingStorageDeletes: [],
+    );
+
+    expect(
+      draft.validationIssue(forPublish: true),
+      CmsCardValidationIssue.imageRequired,
+    );
+    expect(
+      draft.copyWith(images: [media]).validationIssue(forPublish: true),
+      isNull,
+    );
+  });
+
+  test('the first stored image remains the cover after reordering', () {
+    const second = StoredMedia(
+      url: 'https://example.test/fleet/boat/second.png',
+      storagePath: 'fleet/boat/second.png',
+      type: SiteMediaType.image,
+    );
+    const card = CmsCard(
+      id: 'boat',
+      titleRu: 'Катамаран',
+      titleEn: 'Catamaran',
+      priceRu: '',
+      priceEn: '',
+      descriptionRu: 'Описание',
+      descriptionEn: 'Description',
+      images: [second, media],
+      order: 0,
+      isPublished: true,
+      isDeleting: false,
+      pendingStorageDeletes: [],
+    );
+
+    final restored = CmsCard.fromMap(card.id, card.toMap());
+
+    expect(restored.images.first.storagePath, second.storagePath);
+    expect(restored.validationIssue(forPublish: true), isNull);
   });
 
   test('empty English fields fall back to Russian and signal translation', () {
@@ -68,16 +160,7 @@ void main() {
     expect(restored.media.storagePath, 'site/hero/intro.mp4');
   });
 
-  test('legacy display media includes its thumbnail in cleanup paths', () {
-    const legacy = StoredMedia(
-      url: 'https://example.test/boats/vanit/images/1/display.jpg',
-      storagePath: 'boats/vanit/images/1/display.jpg',
-      type: SiteMediaType.image,
-    );
-
-    expect(legacy.storagePaths, [
-      'boats/vanit/images/1/display.jpg',
-      'boats/vanit/images/1/thumbnail.jpg',
-    ]);
+  test('media cleanup uses only the canonical storage path', () {
+    expect(media.storagePaths, ['fleet/boat/photo.webp']);
   });
 }

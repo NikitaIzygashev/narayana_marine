@@ -50,7 +50,9 @@ class ContentStorageService {
     final mediaType = _mediaType(file);
     if (mediaType == null ||
         (!allowVideo && mediaType == SiteMediaType.video)) {
-      throw const ContentStorageException('Неподдерживаемый формат файла.');
+      throw const ContentStorageException(
+        ContentStorageFailure.unsupportedType,
+      );
     }
     final bytes = await file.readAsBytes();
     final maximum = mediaType == SiteMediaType.video
@@ -59,8 +61,8 @@ class ContentStorageService {
     if (bytes.lengthInBytes > maximum) {
       throw ContentStorageException(
         mediaType == SiteMediaType.video
-            ? 'Видео должно быть не больше 100 MB.'
-            : 'Изображение должно быть не больше 10 MB.',
+            ? ContentStorageFailure.videoTooLarge
+            : ContentStorageFailure.imageTooLarge,
       );
     }
     final extension = _safeExtension(file, mediaType);
@@ -104,12 +106,19 @@ class ContentStorageService {
   SiteMediaType? _mediaType(XFile file) {
     final mime = file.mimeType?.toLowerCase();
     final extension = file.name.split('.').last.toLowerCase();
-    if (const {'image/jpeg', 'image/png', 'image/webp'}.contains(mime) ||
-        const {'jpg', 'jpeg', 'png', 'webp'}.contains(extension)) {
+    const imageExtensions = {
+      'image/jpeg': {'jpg', 'jpeg'},
+      'image/png': {'png'},
+      'image/webp': {'webp'},
+    };
+    const videoExtensions = {
+      'video/mp4': {'mp4'},
+      'video/webm': {'webm'},
+    };
+    if (mime != null && imageExtensions[mime]?.contains(extension) == true) {
       return SiteMediaType.image;
     }
-    if (const {'video/mp4', 'video/webm'}.contains(mime) ||
-        const {'mp4', 'webm'}.contains(extension)) {
+    if (mime != null && videoExtensions[mime]?.contains(extension) == true) {
       return SiteMediaType.video;
     }
     return null;
@@ -143,8 +152,10 @@ class ContentStorageService {
 }
 
 class ContentStorageException implements Exception {
-  const ContentStorageException(this.message);
-  final String message;
+  const ContentStorageException(this.failure);
+  final ContentStorageFailure failure;
   @override
-  String toString() => message;
+  String toString() => 'Content storage failure: ${failure.name}';
 }
+
+enum ContentStorageFailure { unsupportedType, imageTooLarge, videoTooLarge }

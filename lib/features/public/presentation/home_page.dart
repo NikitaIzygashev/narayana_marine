@@ -193,7 +193,8 @@ class _HomePageState extends State<HomePage> {
           descriptionEn: '',
           images: const [],
           order: DateTime.now().millisecondsSinceEpoch,
-          isPublished: true,
+          isPublished: false,
+          isDeleting: false,
           pendingStorageDeletes: const [],
         );
     final changed = await showDialog<bool>(
@@ -202,11 +203,11 @@ class _HomePageState extends State<HomePage> {
         kind: kind,
         card: card,
         isNew: isNew,
-        onSave: (next, files, removed) => _cms.saveCard(
+        onSave: (next, images, removed) => _cms.saveCard(
           kind: kind,
           card: next,
           isNew: isNew,
-          newImages: files,
+          images: images,
           removedStoragePaths: removed,
         ),
       ),
@@ -421,7 +422,12 @@ class _HomePageState extends State<HomePage> {
               onTours: () => _scrollTo(_toursKey),
               onWhyUs: () => _scrollTo(_whyKey),
               onFleet: () => _scrollTo(_fleetKey),
-              onBook: () => _scrollTo(_contactKey),
+              onBook: () async {
+                AnalyticsService.cta('header_book_whatsapp');
+
+                final uri = Uri.parse('https://wa.me/66868856885');
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              },
             ),
             if (widget.adminMode)
               Positioned(
@@ -458,7 +464,7 @@ class _StickyHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compactNavigation = MediaQuery.sizeOf(context).width < 960;
-    final verticalPadding = compactNavigation ? 14.0 : 5.0;
+    final verticalPadding = compactNavigation ? 14.0 : 10.0;
     return Positioned(
       top: 0,
       left: 0,
@@ -603,8 +609,8 @@ class _Hero extends StatelessWidget {
             style: const TextStyle(color: Colors.white, fontSize: 16),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: 570,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 570),
             child: Text(
               strings.heroDescription,
               style: const TextStyle(
@@ -1605,6 +1611,18 @@ class _CmsContentCardState extends State<_CmsContentCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (widget.adminMode)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Chip(
+                            label: Text(
+                              widget.item.isPublished
+                                  ? strings.publishedStatus
+                                  : strings.draftStatus,
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
                       Text(
                         widget.item.titleFor(language),
                         maxLines: widget.expanded ? null : 2,

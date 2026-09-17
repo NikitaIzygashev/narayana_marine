@@ -42,19 +42,5 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
-    // Compatibility for media uploaded by the previous editor.
-    match /boats/{boatId}/images/{imageId}/{fileName} {
-      allow read: if true;
-      allow create, update: if isAdmin() && request.resource.contentType == 'image/jpeg'
-        && request.resource.size <= 2500 * 1024;
-      allow delete: if isAdmin();
-    }
-
-    match /tours/{tourId}/images/{imageId}/{fileName} {
-      allow read: if true;
-      allow create, update: if isAdmin() && request.resource.contentType == 'image/jpeg'
-        && request.resource.size <= 2500 * 1024;
-      allow delete: if isAdmin();
-    }
   }
 }

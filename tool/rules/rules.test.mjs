@@ -1,39 +1,153 @@
 import { readFile } from 'node:fs/promises';
-import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import {
+  assertFails,
+  assertSucceeds,
+  initializeTestEnvironment,
+} from '@firebase/rules-unit-testing';
+import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getBytes, ref, uploadBytes } from 'firebase/storage';
 
 const adminUid = 'mBqYpkC87AgLsfXOVn65JnjPG6A3';
-const host = process.env.FIRESTORE_EMULATOR_HOST?.split(':')[0] ?? '127.0.0.1';
-const port = Number(process.env.FIRESTORE_EMULATOR_HOST?.split(':')[1] ?? 8080);
-const rules = await readFile(new URL('../../firestore.rules', import.meta.url), 'utf8');
+const firestoreHost =
+  process.env.FIRESTORE_EMULATOR_HOST?.split(':')[0] ?? '127.0.0.1';
+const firestorePort = Number(
+  process.env.FIRESTORE_EMULATOR_HOST?.split(':')[1] ?? 8080,
+);
+const storageHost =
+  process.env.FIREBASE_STORAGE_EMULATOR_HOST?.split(':')[0] ?? '127.0.0.1';
+const storagePort = Number(
+  process.env.FIREBASE_STORAGE_EMULATOR_HOST?.split(':')[1] ?? 9199,
+);
+const firestoreRules = await readFile(
+  new URL('../../firestore.rules', import.meta.url),
+  'utf8',
+);
+const storageRules = await readFile(
+  new URL('../../storage.rules', import.meta.url),
+  'utf8',
+);
 const testEnv = await initializeTestEnvironment({
   projectId: 'narayana-marine-rules-test',
-  firestore: { host, port, rules },
+  firestore: { host: firestoreHost, port: firestorePort, rules: firestoreRules },
+  storage: { host: storageHost, port: storagePort, rules: storageRules },
 });
 
-const boat = {
-  titleRu: 'Тест', titleEn: 'Test', priceRu: '', priceEn: '',
-  descriptionRu: 'Описание', descriptionEn: 'Description', images: [],
-  order: 10, isPublished: false, pendingStorageDeletes: [],
-  createdAt: new Date(), updatedAt: new Date(),
+const timestamps = { createdAt: new Date(), updatedAt: new Date() };
+const image = {
+  url: 'https://example.test/fleet/test-boat/photo.jpg',
+  storagePath: 'fleet/test-boat/photo.jpg',
+  type: 'image',
 };
-
-const service = {
-  textRu: 'Тестовая услуга', textEn: 'Test service', order: 10,
-  createdAt: new Date(), updatedAt: new Date(),
+const draftBoat = {
+  titleRu: 'Тест',
+  titleEn: '',
+  priceRu: '',
+  priceEn: '',
+  descriptionRu: '',
+  descriptionEn: '',
+  images: [],
+  order: 10,
+  isPublished: false,
+  isDeleting: false,
+  pendingStorageDeletes: [],
+  ...timestamps,
+};
+const publishedBoat = {
+  ...draftBoat,
+  titleEn: 'Test',
+  descriptionRu: 'Описание',
+  descriptionEn: 'Description',
+  images: [image],
+  isPublished: true,
 };
 
 try {
-  await assertSucceeds(setDoc(doc(testEnv.authenticatedContext(adminUid).firestore(), 'boats', 'test-boat'), boat));
-  await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), 'boats', 'test-boat')));
-  await assertFails(setDoc(doc(testEnv.unauthenticatedContext().firestore(), 'boats', 'blocked'), boat));
-  await testEnv.withSecurityRulesDisabled(async (context) => {
-    await setDoc(doc(context.firestore(), 'boats', 'published-boat'), { ...boat, isPublished: true });
-  });
-  await assertSucceeds(getDoc(doc(testEnv.unauthenticatedContext().firestore(), 'boats', 'published-boat')));
-  await assertSucceeds(setDoc(doc(testEnv.authenticatedContext(adminUid).firestore(), 'services', 'test-service'), service));
-  await assertFails(setDoc(doc(testEnv.unauthenticatedContext().firestore(), 'services', 'blocked-service'), service));
-  console.log('Firestore rule tests passed.');
+  const admin = testEnv.authenticatedContext(adminUid);
+  const visitor = testEnv.unauthenticatedContext();
+
+  await assertSucceeds(setDoc(doc(admin.firestore(), 'boats', 'test-boat'), draftBoat));
+  await assertFails(getDoc(doc(visitor.firestore(), 'boats', 'test-boat')));
+  await assertFails(
+    setDoc(doc(admin.firestore(), 'boats', 'invalid-draft'), {
+      ...draftBoat,
+      titleRu: '',
+    }),
+  );
+  await assertFails(
+    setDoc(doc(admin.firestore(), 'boats', 'invalid-published'), {
+      ...draftBoat,
+      isPublished: true,
+    }),
+  );
+  await assertFails(
+    setDoc(doc(admin.firestore(), 'boats', 'legacy-field'), {
+      ...draftBoat,
+      name: 'Legacy name',
+    }),
+  );
+  await assertFails(
+    setDoc(doc(admin.firestore(), 'boats', 'too-many-images'), {
+      ...publishedBoat,
+      images: Array.from({ length: 11 }, () => image),
+    }),
+  );
+  await assertSucceeds(
+    setDoc(doc(admin.firestore(), 'boats', 'published-boat'), publishedBoat),
+  );
+  await assertSucceeds(
+    getDoc(doc(visitor.firestore(), 'boats', 'published-boat')),
+  );
+  await assertFails(
+    setDoc(doc(visitor.firestore(), 'boats', 'published-boat'), publishedBoat),
+  );
+  await assertFails(deleteDoc(doc(visitor.firestore(), 'boats', 'published-boat')));
+  await assertSucceeds(
+    setDoc(doc(admin.firestore(), 'tours', 'test-tour'), {
+      ...publishedBoat,
+      images: [
+        {
+          ...image,
+          storagePath: 'excursions/test-tour/photo.jpg',
+          url: 'https://example.test/excursions/test-tour/photo.jpg',
+        },
+      ],
+    }),
+  );
+  await assertFails(
+    setDoc(doc(admin.firestore(), 'tours', 'invalid-tour'), {
+      ...publishedBoat,
+      images: [image],
+    }),
+  );
+
+  const imageBytes = new Uint8Array([0xff, 0xd8, 0xff]);
+  await assertSucceeds(
+    uploadBytes(ref(admin.storage(), 'fleet/test-boat/photo.jpg'), imageBytes, {
+      contentType: 'image/jpeg',
+    }),
+  );
+  await assertFails(
+    uploadBytes(ref(visitor.storage(), 'fleet/blocked/photo.jpg'), imageBytes, {
+      contentType: 'image/jpeg',
+    }),
+  );
+  await assertFails(
+    uploadBytes(ref(admin.storage(), 'fleet/test-boat/photo.gif'), imageBytes, {
+      contentType: 'image/gif',
+    }),
+  );
+  await assertFails(
+    uploadBytes(
+      ref(admin.storage(), 'fleet/test-boat/too-large.jpg'),
+      new Uint8Array(10 * 1024 * 1024 + 1),
+      { contentType: 'image/jpeg' },
+    ),
+  );
+  await assertSucceeds(
+    getBytes(ref(visitor.storage(), 'fleet/test-boat/photo.jpg')),
+  );
+
+  console.log('Firestore and Storage rule tests passed.');
 } finally {
   await testEnv.cleanup();
 }

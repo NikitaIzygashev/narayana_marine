@@ -21,16 +21,7 @@ class StoredMedia {
   final String storagePath;
   final SiteMediaType type;
 
-  /// A legacy CMS image has a display/thumbnail pair; new media uses one path.
-  Iterable<String> get storagePaths sync* {
-    yield storagePath;
-    if (storagePath.endsWith('/display.jpg')) {
-      yield storagePath.replaceFirst(
-        RegExp(r'/display\.jpg$'),
-        '/thumbnail.jpg',
-      );
-    }
-  }
+  Iterable<String> get storagePaths => [storagePath];
 
   factory StoredMedia.fromMap(Map<String, dynamic> map) => StoredMedia(
     url: map['url'] as String? ?? '',
@@ -75,6 +66,7 @@ class CmsCard {
     required this.images,
     required this.order,
     required this.isPublished,
+    required this.isDeleting,
     required this.pendingStorageDeletes,
   });
 
@@ -88,6 +80,7 @@ class CmsCard {
   final List<StoredMedia> images;
   final int order;
   final bool isPublished;
+  final bool isDeleting;
   final List<String> pendingStorageDeletes;
 
   String titleFor(String languageCode) => languageCode == 'ru'
@@ -99,45 +92,49 @@ class CmsCard {
   String descriptionFor(String languageCode) => languageCode == 'ru'
       ? _fallback(descriptionRu, descriptionEn)
       : _fallback(descriptionEn, descriptionRu);
-  bool get needsEnglishTranslation =>
-      titleEn.trim().isEmpty ||
-      descriptionEn.trim().isEmpty ||
-      priceEn.trim().isEmpty;
+
+  CmsCardValidationIssue? validationIssue({required bool forPublish}) {
+    if (titleRu.trim().isEmpty && titleEn.trim().isEmpty) {
+      return CmsCardValidationIssue.draftTitleRequired;
+    }
+    if (images.length > 10) return CmsCardValidationIssue.imageLimitExceeded;
+    if (!forPublish) return null;
+    if (titleRu.trim().isEmpty) return CmsCardValidationIssue.titleRuRequired;
+    if (titleEn.trim().isEmpty) return CmsCardValidationIssue.titleEnRequired;
+    if (descriptionRu.trim().isEmpty) {
+      return CmsCardValidationIssue.descriptionRuRequired;
+    }
+    if (descriptionEn.trim().isEmpty) {
+      return CmsCardValidationIssue.descriptionEnRequired;
+    }
+    if (images.isEmpty) return CmsCardValidationIssue.imageRequired;
+    if (images.any(
+      (image) =>
+          image.type != SiteMediaType.image ||
+          image.url.trim().isEmpty ||
+          image.storagePath.trim().isEmpty,
+    )) {
+      return CmsCardValidationIssue.invalidImage;
+    }
+    return null;
+  }
 
   factory CmsCard.fromMap(String id, Map<String, dynamic> map) => CmsCard(
     id: id,
-    titleRu: map['titleRu'] as String? ?? map['name'] as String? ?? '',
-    titleEn: map['titleEn'] as String? ?? map['name'] as String? ?? '',
-    priceRu: map['priceRu'] as String? ?? map['priceLabel'] as String? ?? '',
-    priceEn: map['priceEn'] as String? ?? map['priceLabel'] as String? ?? '',
-    descriptionRu:
-        map['descriptionRu'] as String? ??
-        map['shortDescription'] as String? ??
-        map['description'] as String? ??
-        '',
-    descriptionEn:
-        map['descriptionEn'] as String? ??
-        map['shortDescription'] as String? ??
-        map['description'] as String? ??
-        '',
-    images: ((map['images'] ?? map['gallery']) as List<dynamic>? ?? const [])
+    titleRu: map['titleRu'] as String? ?? '',
+    titleEn: map['titleEn'] as String? ?? '',
+    priceRu: map['priceRu'] as String? ?? '',
+    priceEn: map['priceEn'] as String? ?? '',
+    descriptionRu: map['descriptionRu'] as String? ?? '',
+    descriptionEn: map['descriptionEn'] as String? ?? '',
+    images: (map['images'] as List<dynamic>? ?? const [])
         .whereType<Map>()
-        .map((item) {
-          final value = Map<String, dynamic>.from(item);
-          if (value.containsKey('url')) return StoredMedia.fromMap(value);
-          return StoredMedia(
-            url: value['displayUrl'] as String? ?? '',
-            storagePath: value['displayPath'] as String? ?? '',
-            type: SiteMediaType.image,
-          );
-        })
+        .map((item) => StoredMedia.fromMap(Map<String, dynamic>.from(item)))
         .where((item) => item.url.isNotEmpty && item.storagePath.isNotEmpty)
         .toList(),
-    order:
-        (map['order'] as num?)?.round() ??
-        (map['sortOrder'] as num?)?.round() ??
-        0,
-    isPublished: map['isPublished'] as bool? ?? true,
+    order: (map['order'] as num?)?.round() ?? 0,
+    isPublished: map['isPublished'] as bool? ?? false,
+    isDeleting: map['isDeleting'] as bool? ?? false,
     pendingStorageDeletes:
         ((map['pendingStorageDeletes'] as List<dynamic>?) ?? const [])
             .whereType<String>()
@@ -154,6 +151,7 @@ class CmsCard {
     'images': images.map((item) => item.toMap()).toList(),
     'order': order,
     'isPublished': isPublished,
+    'isDeleting': isDeleting,
     'pendingStorageDeletes': pendingStorageDeletes,
   };
 
@@ -167,6 +165,8 @@ class CmsCard {
     List<StoredMedia>? images,
     List<String>? pendingStorageDeletes,
     bool? isPublished,
+    bool? isDeleting,
+    int? order,
   }) => CmsCard(
     id: id,
     titleRu: titleRu ?? this.titleRu,
@@ -176,10 +176,22 @@ class CmsCard {
     descriptionRu: descriptionRu ?? this.descriptionRu,
     descriptionEn: descriptionEn ?? this.descriptionEn,
     images: images ?? this.images,
-    order: order,
+    order: order ?? this.order,
     isPublished: isPublished ?? this.isPublished,
+    isDeleting: isDeleting ?? this.isDeleting,
     pendingStorageDeletes: pendingStorageDeletes ?? this.pendingStorageDeletes,
   );
+}
+
+enum CmsCardValidationIssue {
+  draftTitleRequired,
+  titleRuRequired,
+  titleEnRequired,
+  descriptionRuRequired,
+  descriptionEnRequired,
+  imageRequired,
+  imageLimitExceeded,
+  invalidImage,
 }
 
 class GalleryItem {

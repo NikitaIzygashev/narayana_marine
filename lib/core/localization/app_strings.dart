@@ -41,15 +41,13 @@ class AppStrings {
   String get openNavigation =>
       isRussian ? 'Открыть навигацию' : 'Open navigation';
 
-  String get heroTitle => isRussian
-      ? 'Дарим моменты,\nкоторые греют.'
-      : "Moments you'll carry with you.";
+  String get heroTitle => 'NARAYANA MARINE';
   String get heroServices => isRussian
-      ? 'Премиальные катамараны • Ранние программы • Частные чартеры'
-      : 'Premium catamarans • Early departures • Private charters';
+      ? 'Надёжные лодки. Любимые гости. Яркие воспоминания.'
+      : 'Real Boats. Real Guests. Real Memories.';
   String get heroDescription => isRussian
-      ? 'Твоё море. Твои острова. Наша забота.'
-      : 'Your sea. Your islands. Our care.';
+      ? 'Премиальные путешествия на катамаранах из Пхукета.'
+      : 'Premium Catamaran Experiences in Phuket.';
   String get exploreTours => isRussian ? 'Экскурсии' : 'Explore tours';
   String get privateCharter => isRussian ? 'Частный чартер' : 'Private Charter';
 
@@ -235,6 +233,56 @@ class AppStrings {
       : 'You can add no more than 10 images.';
   String get couldNotSaveCard =>
       isRussian ? 'Не удалось сохранить карточку.' : 'Could not save card.';
+  String get draftStatus => isRussian ? 'Черновик' : 'Draft';
+  String get publishedStatus => isRussian ? 'Опубликовано' : 'Published';
+  String get publish => isRussian ? 'Опубликовать' : 'Publish';
+  String get unpublish => isRussian ? 'Снять с публикации' : 'Unpublish';
+  String get displayOrderLabel =>
+      isRussian ? 'Порядок отображения' : 'Display order';
+  String get validOrderRequired => isRussian
+      ? 'Введите целое число для порядка.'
+      : 'Enter a whole number for display order.';
+  String get imageOrderHint => isRussian
+      ? 'Первое изображение — главное. Используйте стрелки для изменения порядка.'
+      : 'The first image is the cover. Use arrows to change the order.';
+  String get replaceImage =>
+      isRussian ? 'Заменить изображение' : 'Replace image';
+  String get cmsDraftTitleRequired => isRussian
+      ? 'Для черновика укажите название на русском или английском.'
+      : 'Add a Russian or English title before saving a draft.';
+  String get cmsTitleRuRequired => isRussian
+      ? 'Для публикации укажите название на русском.'
+      : 'Add a Russian title before publishing.';
+  String get cmsTitleEnRequired => isRussian
+      ? 'Для публикации укажите название на английском.'
+      : 'Add an English title before publishing.';
+  String get cmsDescriptionRuRequired => isRussian
+      ? 'Для публикации добавьте описание на русском.'
+      : 'Add a Russian description before publishing.';
+  String get cmsDescriptionEnRequired => isRussian
+      ? 'Для публикации добавьте описание на английском.'
+      : 'Add an English description before publishing.';
+  String get cmsImageRequired => isRussian
+      ? 'Для публикации добавьте хотя бы одно изображение.'
+      : 'Add at least one image before publishing.';
+  String get cmsInvalidImage => isRussian
+      ? 'Одно из изображений имеет некорректные данные.'
+      : 'One of the images has invalid data.';
+  String get cmsPermissionDenied => isRussian
+      ? 'Нет прав для выполнения этого действия.'
+      : 'You do not have permission to perform this action.';
+  String get cmsNetworkError => isRussian
+      ? 'Ошибка сети. Проверьте подключение и повторите попытку.'
+      : 'Network error. Check your connection and try again.';
+  String get cmsWriteError => isRussian
+      ? 'Не удалось сохранить изменения. Повторите попытку.'
+      : 'Could not save the changes. Please try again.';
+  String get cmsUnsupportedImageType => isRussian
+      ? 'Поддерживаются только JPEG, PNG и WebP изображения.'
+      : 'Only JPEG, PNG, and WebP images are supported.';
+  String get cmsImageTooLarge => isRussian
+      ? 'Изображение должно быть не больше 10 MB.'
+      : 'An image must be no larger than 10 MB.';
   String get requiredField =>
       isRussian ? 'Обязательное поле.' : 'This field is required.';
 

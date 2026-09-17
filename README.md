@@ -26,19 +26,6 @@ sections; it never exposes those controls on `/`.
 - Firestore and Storage Rules must be deployed before publishing any content.
 - Set `RECAPTCHA_V3_SITE_KEY` as a build-time value only after App Check has been registered in Firebase Console. Without it, the application runs normally but does not activate App Check.
 
-## Initial catalog
-
-The seed tool creates only missing, unpublished documents and never contains credentials.
-
-```powershell
-cd tool
-npm install
-npm run seed:dry-run
-npm run seed:apply
-```
-
-The owner must authenticate locally with Application Default Credentials before applying seed data. Do not commit credentials.
-
 ## Initial "Why us" migration
 
 The 16 existing service chips are Firestore data. Run the idempotent seed once
@@ -55,12 +42,14 @@ The script only creates missing stable IDs and never overwrites edited services.
 
 ## CMS Storage lifecycle
 
-CMS uploads media directly to Firebase Storage URLs; it does not download or
-persist copies on the visitor device. For a replacement it uploads the new
-object, updates Firestore, then deletes the old `storagePath`. If the Firestore
-write fails, the newly uploaded object is removed. A small
-`pendingStorageDeletes` list allows the next authorized CMS session to safely
-retry a Storage deletion interrupted by a network failure.
+New Boat and Tour cards are drafts. Save preserves their publication state;
+Publish requires both localized titles and descriptions plus at least one
+image. CMS uploads media directly to Firebase Storage URLs; it does not
+download or persist copies on the visitor device. For a replacement it uploads
+the new object, replaces the canonical Firestore document, then deletes the
+old `storagePath`. If the Firestore write fails, the newly uploaded object is
+removed. A small `pendingStorageDeletes` list allows the next authorized CMS
+session to safely retry a Storage deletion interrupted by a network failure.
 
 ## Google Maps reviews
 
