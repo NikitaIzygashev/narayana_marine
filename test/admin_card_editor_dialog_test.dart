@@ -8,6 +8,7 @@ import 'package:narayana_marine/core/localization/app_strings.dart';
 import 'package:narayana_marine/core/localization/locale_controller.dart';
 import 'package:narayana_marine/features/admin/presentation/widgets/admin_card_editor_dialog.dart';
 import 'package:narayana_marine/models/cms_models.dart';
+import 'package:narayana_marine/services/cms_content_service.dart';
 
 class _MemoryStore implements LocalePreferenceStore {
   @override
@@ -169,4 +170,126 @@ void main() {
     final preview = tester.widget<Image>(find.byType(Image));
     expect(preview.image, isA<MemoryImage>());
   });
+
+  testWidgets('editor selects a tapped image as the canonical cover', (
+      tester,
+      ) async {
+    const first = StoredMedia(
+      url: 'https://example.test/first.jpg',
+      storagePath: 'fleet/test/first.jpg',
+      type: SiteMediaType.image,
+    );
+
+    const second = StoredMedia(
+      url: 'https://example.test/second.jpg',
+      storagePath: 'fleet/test/second.jpg',
+      type: SiteMediaType.image,
+    );
+
+    CmsCard? savedCard;
+    List<CardImageInput>? savedInputs;
+
+    await tester.pumpWidget(
+      _editorHarness(
+        card: _card(images: const [first, second]),
+        onSave: (card, images, _) async {
+          savedCard = card;
+          savedInputs = images;
+        },
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.text('Display order'), findsNothing);
+    expect(
+      find.text(
+        'The first image is the cover. Use arrows to change the order.',
+      ),
+      findsNothing,
+    );
+
+    expect(find.byIcon(Icons.arrow_back), findsNothing);
+    expect(find.byIcon(Icons.arrow_forward), findsNothing);
+
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+    final secondImage = find.byWidgetPredicate(
+          (widget) =>
+      widget is Semantics &&
+          widget.properties.label == 'Set cover' &&
+          widget.properties.selected == false,
+    );
+
+    expect(secondImage, findsOneWidget);
+
+    final secondCoverTarget = find.descendant(
+      of: secondImage,
+      matching: find.byType(InkWell),
+    );
+
+    expect(secondCoverTarget, findsOneWidget);
+
+    await tester.ensureVisible(secondCoverTarget);
+    await tester.pumpAndSettle();
+    await tester.tap(secondCoverTarget);
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+
+    expect(savedCard, isNotNull);
+    expect(savedInputs, isNotNull);
+    expect(savedCard!.order, 123456789);
+    expect(
+      savedCard!.images.first.storagePath,
+      second.storagePath,
+    );
+    expect(
+      savedInputs!.first.existing!.storagePath,
+      second.storagePath,
+    );
+    expect(
+      savedInputs![1].existing!.storagePath,
+      first.storagePath,
+    );
+  });
 }
+
+Widget _editorHarness({
+  required CmsCard card,
+  Future<void> Function(CmsCard, List<CardImageInput>, Set<String>)? onSave,
+}) {
+  final controller = LocaleController(
+    store: _MemoryStore(),
+    initialLocale: AppLocale.english,
+  );
+  return LocaleScope(
+    controller: controller,
+    child: MaterialApp(
+      home: AdminCardEditorDialog(
+        kind: CmsCardKind.boats,
+        isNew: false,
+        card: card,
+        onSave: onSave ?? (_, _, _) async {},
+      ),
+    ),
+  );
+}
+
+CmsCard _card({List<StoredMedia> images = const []}) => CmsCard(
+  id: 'test-card',
+  titleRu: 'Название',
+  titleEn: 'Title',
+  priceRu: '',
+  priceEn: '',
+  descriptionRu: 'Описание',
+  descriptionEn: 'Description',
+  images: images,
+  order: 123456789,
+  isPublished: false,
+  isDeleting: false,
+  pendingStorageDeletes: const [],
+);

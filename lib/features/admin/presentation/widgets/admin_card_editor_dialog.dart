@@ -48,7 +48,6 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
   late final _descriptionEn = TextEditingController(
     text: widget.card.descriptionEn,
   );
-  late final _order = TextEditingController(text: widget.card.order.toString());
   late final List<CardImageInput> _images = widget.card.images
       .map(CardImageInput.existing)
       .toList();
@@ -65,7 +64,6 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
       _priceEn,
       _descriptionRu,
       _descriptionEn,
-      _order,
     ]) {
       item.dispose();
     }
@@ -106,12 +104,11 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
     });
   }
 
-  void _moveImage(int index, int offset) {
-    final nextIndex = index + offset;
-    if (nextIndex < 0 || nextIndex >= _images.length) return;
+  void _selectCover(int index) {
+    if (index == 0) return;
     setState(() {
       final item = _images.removeAt(index);
-      _images.insert(nextIndex, item);
+      _images.insert(0, item);
     });
   }
 
@@ -150,7 +147,7 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
         .whereType<StoredMedia>()
         .toList(),
     isPublished: isPublished,
-    order: int.tryParse(_order.text.trim()) ?? widget.card.order,
+    order: widget.card.order,
   );
 
   Future<void> _save(_CardSaveAction action) async {
@@ -270,14 +267,6 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
                 context.strings.descriptionEnLabel,
                 lines: 4,
               ),
-              _field(
-                _order,
-                context.strings.displayOrderLabel,
-                keyboardType: TextInputType.number,
-                validator: (value) => int.tryParse(value?.trim() ?? '') == null
-                    ? context.strings.validOrderRequired
-                    : null,
-              ),
               const SizedBox(height: 10),
               Row(
                 children: [
@@ -292,8 +281,6 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(context.strings.imageOrderHint),
-              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -302,11 +289,8 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
                   (index) => _ImageInputTile(
                     input: _images[index],
                     isCover: index == 0,
-                    canMoveEarlier: index > 0,
-                    canMoveLater: index < _images.length - 1,
                     disabled: _saving,
-                    onMoveEarlier: () => _moveImage(index, -1),
-                    onMoveLater: () => _moveImage(index, 1),
+                    onSelectCover: () => _selectCover(index),
                     onReplace: () => _replaceImage(index),
                     onDelete: () => _removeImage(index),
                   ),
@@ -366,7 +350,12 @@ class _AdminCardEditorDialogState extends State<AdminCardEditorDialog> {
       minLines: lines,
       maxLines: lines == 1 ? 1 : 6,
       keyboardType: keyboardType,
-      decoration: InputDecoration(labelText: label),
+      textAlign: TextAlign.left,
+      textAlignVertical: TextAlignVertical.top,
+      decoration: InputDecoration(
+        labelText: label,
+        contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      ),
       validator: validator,
     ),
   );
@@ -391,22 +380,16 @@ class _ImageInputTile extends StatelessWidget {
   const _ImageInputTile({
     required this.input,
     required this.isCover,
-    required this.canMoveEarlier,
-    required this.canMoveLater,
     required this.disabled,
-    required this.onMoveEarlier,
-    required this.onMoveLater,
+    required this.onSelectCover,
     required this.onReplace,
     required this.onDelete,
   });
 
   final CardImageInput input;
   final bool isCover;
-  final bool canMoveEarlier;
-  final bool canMoveLater;
   final bool disabled;
-  final VoidCallback onMoveEarlier;
-  final VoidCallback onMoveLater;
+  final VoidCallback onSelectCover;
   final VoidCallback onReplace;
   final VoidCallback onDelete;
 
@@ -414,36 +397,68 @@ class _ImageInputTile extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
     width: 128,
     child: Card(
+      shape: RoundedRectangleBorder(
+        side: BorderSide(
+          color: isCover
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(6),
         child: Column(
           children: [
-            AspectRatio(aspectRatio: 1.35, child: _ImagePreview(input: input)),
-            if (isCover)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  context.strings.coverImage,
-                  style: Theme.of(context).textTheme.labelSmall,
+            Semantics(
+              button: true,
+              selected: isCover,
+              label: context.strings.setCover,
+              child: Tooltip(
+                message: context.strings.setCover,
+                child: InkWell(
+                  onTap: disabled ? null : onSelectCover,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Stack(
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 1.35,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: _ImagePreview(input: input),
+                        ),
+                      ),
+                      if (isCover)
+                        const Positioned(
+                          top: 4,
+                          right: 4,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(2),
+                              child: Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
+            ),
             Wrap(
               spacing: 0,
               children: [
                 IconButton(
-                  tooltip: context.strings.moveEarlier,
-                  onPressed: disabled || !canMoveEarlier ? null : onMoveEarlier,
-                  icon: const Icon(Icons.arrow_back, size: 18),
-                ),
-                IconButton(
-                  tooltip: context.strings.moveLater,
-                  onPressed: disabled || !canMoveLater ? null : onMoveLater,
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                ),
-                IconButton(
                   tooltip: context.strings.replaceImage,
                   onPressed: disabled ? null : onReplace,
-                  icon: const Icon(Icons.swap_horiz, size: 18),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
                 ),
                 IconButton(
                   tooltip: context.strings.deleteImage,

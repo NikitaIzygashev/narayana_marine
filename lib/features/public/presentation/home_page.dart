@@ -1476,7 +1476,7 @@ class _CmsCardsSectionState extends State<_CmsCardsSection> {
                   itemCount: items.length,
                   itemBuilder: (index) => KeyedSubtree(
                     key: _cardKey(items[index].id),
-                    child: _CmsContentCard(
+                    child: CmsContentCard(
                       key: ValueKey(items[index].id),
                       item: items[index],
                       expanded: _expandedCardId == items[index].id,
@@ -1495,8 +1495,8 @@ class _CmsCardsSectionState extends State<_CmsCardsSection> {
   }
 }
 
-class _CmsContentCard extends StatefulWidget {
-  const _CmsContentCard({
+class CmsContentCard extends StatefulWidget {
+  const CmsContentCard({
     super.key,
     required this.item,
     required this.expanded,
@@ -1513,14 +1513,14 @@ class _CmsContentCard extends StatefulWidget {
   final VoidCallback onDelete;
 
   @override
-  State<_CmsContentCard> createState() => _CmsContentCardState();
+  State<CmsContentCard> createState() => _CmsContentCardState();
 }
 
-class _CmsContentCardState extends State<_CmsContentCard> {
+class _CmsContentCardState extends State<CmsContentCard> {
   int _selectedImageIndex = 0;
 
   @override
-  void didUpdateWidget(covariant _CmsContentCard oldWidget) {
+  void didUpdateWidget(covariant CmsContentCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_selectedImageIndex >= widget.item.images.length) {
       _selectedImageIndex = 0;
@@ -1566,7 +1566,7 @@ class _CmsContentCardState extends State<_CmsContentCard> {
                     ),
                   ),
                 ),
-                if (widget.expanded && imageUrls.length > 1)
+                if (imageUrls.length > 1)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
                     child: SizedBox(
