@@ -241,38 +241,5 @@ class GalleryItem {
   };
 }
 
-class ServiceItem {
-  const ServiceItem({
-    required this.id,
-    required this.textRu,
-    required this.textEn,
-    required this.order,
-  });
-
-  final String id;
-  final String textRu;
-  final String textEn;
-  final int order;
-
-  String textFor(String languageCode) => languageCode == 'ru'
-      ? _fallback(textRu, textEn)
-      : _fallback(textEn, textRu);
-  bool get needsEnglishTranslation => textEn.trim().isEmpty;
-
-  factory ServiceItem.fromMap(String id, Map<String, dynamic> map) =>
-      ServiceItem(
-        id: id,
-        textRu: map['textRu'] as String? ?? '',
-        textEn: map['textEn'] as String? ?? '',
-        order: (map['order'] as num?)?.round() ?? 0,
-      );
-
-  Map<String, dynamic> toMap() => {
-    'textRu': textRu,
-    'textEn': textEn,
-    'order': order,
-  };
-}
-
 String _fallback(String first, String second) =>
     first.trim().isEmpty ? second : first;

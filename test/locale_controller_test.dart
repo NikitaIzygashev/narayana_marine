@@ -58,8 +58,8 @@ void main() {
       const english = AppStrings(AppLocale.english);
       const russian = AppStrings(AppLocale.russian);
 
-      expect(english.whyUs, 'Why Narayana');
-      expect(russian.whyUs, 'Почему Narayana');
+      expect(english.whyNarayana, 'Why Narayana?');
+      expect(russian.whyNarayana, 'Почему Narayana?');
       expect(english.heroEyebrow, 'PHUKET • THAILAND');
       expect(russian.heroEyebrow, 'ПХУКЕТ • ТАИЛАНД');
       expect(english.heroTitle, 'NARAYANA MARINE');
@@ -91,8 +91,6 @@ void main() {
     const english = AppStrings(AppLocale.english);
     const russian = AppStrings(AppLocale.russian);
 
-    expect(english.addService, 'Add service');
-    expect(russian.addService, 'Добавить услугу');
     expect(english.addCard, 'Add card');
     expect(russian.addCard, 'Добавить карточку');
     expect(english.addImage, 'Add image');

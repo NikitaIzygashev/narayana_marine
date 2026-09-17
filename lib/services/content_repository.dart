@@ -14,14 +14,11 @@ class ContentRepository {
       _firestore.collection('tours');
   CollectionReference<Map<String, dynamic>> get _content =>
       _firestore.collection('content');
-  CollectionReference<Map<String, dynamic>> get _services =>
-      _firestore.collection('services');
   DocumentReference<Map<String, dynamic>> get _hero =>
       _firestore.collection('site').doc('hero');
 
   String newId(CmsCardKind kind) => _collectionFor(kind).doc().id;
   String newGalleryId() => _content.doc().id;
-  String newServiceId() => _services.doc().id;
 
   Future<HeroMedia?> fetchHero() async {
     final snapshot = await _hero.get();
@@ -53,15 +50,6 @@ class ContentRepository {
     final result = snapshot.docs
         .map((doc) => GalleryItem.fromMap(doc.id, doc.data()))
         .where((item) => item.media.url.isNotEmpty)
-        .toList();
-    result.sort((a, b) => a.order.compareTo(b.order));
-    return result;
-  }
-
-  Future<List<ServiceItem>> fetchServices() async {
-    final snapshot = await _services.get();
-    final result = snapshot.docs
-        .map((doc) => ServiceItem.fromMap(doc.id, doc.data()))
         .toList();
     result.sort((a, b) => a.order.compareTo(b.order));
     return result;
@@ -159,10 +147,6 @@ class ContentRepository {
       });
 
   Future<void> deleteGalleryItem(String id) => _content.doc(id).delete();
-
-  Future<void> saveService(ServiceItem item, {required bool isNew}) =>
-      _saveDocument(_services.doc(item.id), item.toMap(), isNew: isNew);
-  Future<void> deleteService(String id) => _services.doc(id).delete();
 
   Future<void> _saveDocument(
     DocumentReference<Map<String, dynamic>> reference,

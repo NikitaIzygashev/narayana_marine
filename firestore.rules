@@ -101,16 +101,6 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
-    function validService(data) {
-      return data.keys().hasOnly(['textRu', 'textEn', 'order', 'createdAt', 'updatedAt'])
-        && data.keys().hasAll(['textRu', 'textEn', 'order', 'createdAt', 'updatedAt'])
-        && data.textRu is string
-        && data.textEn is string
-        && data.order is int
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp;
-    }
-
     function validHero(data) {
       return data.keys().hasOnly(['media', 'pendingStorageDeletes', 'updatedAt'])
         && data.keys().hasAll(['media', 'pendingStorageDeletes', 'updatedAt'])
@@ -155,13 +145,5 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    match /services/{serviceId} {
-      allow get, list: if true;
-      allow create: if isAdmin() && validService(request.resource.data);
-      allow update: if isAdmin()
-        && request.resource.data.createdAt == resource.data.createdAt
-        && validService(request.resource.data);
-      allow delete: if isAdmin();
-    }
   }
 }

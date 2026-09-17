@@ -26,20 +26,6 @@ sections; it never exposes those controls on `/`.
 - Firestore and Storage Rules must be deployed before publishing any content.
 - Set `RECAPTCHA_V3_SITE_KEY` as a build-time value only after App Check has been registered in Firebase Console. Without it, the application runs normally but does not activate App Check.
 
-## Initial "Why us" migration
-
-The 16 existing service chips are Firestore data. Run the idempotent seed once
-before deploying the CMS build so this public section is never empty:
-
-```powershell
-cd tool
-npm run seed:services:dry-run
-npm run seed:services:apply
-cd ..
-```
-
-The script only creates missing stable IDs and never overwrites edited services.
-
 ## CMS Storage lifecycle
 
 New Boat and Tour cards are drafts. Save preserves their publication state;

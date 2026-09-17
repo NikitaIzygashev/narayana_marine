@@ -35,7 +35,7 @@ class AppStrings {
   String get heroEyebrow =>
       isRussian ? 'ПХУКЕТ • ТАИЛАНД' : 'PHUKET • THAILAND';
   String get toursNav => isRussian ? 'Экскурсии' : 'Tours';
-  String get whyUs => isRussian ? 'Почему Narayana' : 'Why Narayana';
+  String get whyNarayana => isRussian ? 'Почему Narayana?' : 'Why Narayana?';
   String get ourFleetNav => isRussian ? 'Наш флот' : 'Our Fleet';
   String get bookNow => isRussian ? 'Забронировать' : 'Book now';
   String get openNavigation =>
@@ -59,12 +59,61 @@ class AppStrings {
       ? 'Narayana Marine — особенный взгляд на путешествия по Андаманскому морю. Продуманные маршруты, современные катамараны и профессиональная команда. От приватных чартеров до ярких путешествий по островам — мы создаём дни, которые хочется прожить снова.'
       : "Narayana Marine offers a different way to experience the Andaman Sea. Thoughtfully planned routes, modern catamarans and a professional crew come together to make every journey effortless. From private charters to unforgettable island adventures, we create days you'll want to experience all over again.";
 
-  String get whyEyebrow => isRussian ? 'ПОЧЕМУ МЫ' : 'WHY US';
-  String get whyTitle =>
-      isRussian ? 'Ваш комфорт - наш приоритет.' : 'Your comfort comes first.';
-  String get whyNote => isRussian
-      ? '*Актуальный состав услуг зависит от судна и программы. Уточняйте у менеджеров.'
-      : '*Inclusions vary by vessel and tour. Please check the latest details with our team.';
+  List<WhyNarayanaBenefit> get whyNarayanaBenefits => isRussian
+      ? const [
+          WhyNarayanaBenefit(
+            title: 'Реальные лодки',
+            body:
+                'Вы получаете именно то, что видите. На наших фотографиях показаны реальные лодки, на которых проходят поездки — без неприятных сюрпризов.',
+          ),
+          WhyNarayanaBenefit(
+            title: 'Комфорт премиального уровня',
+            body:
+                'Больше пространства, удобные места и наша фирменная верхняя палуба делают путешествие комфортным от начала до конца.',
+          ),
+          WhyNarayanaBenefit(
+            title: 'Ранний старт',
+            body:
+                'Мы отправляемся раньше, чтобы вы могли увидеть острова до самых загруженных часов и большого потока туристов.',
+          ),
+          WhyNarayanaBenefit(
+            title: 'Настоящее гостеприимство',
+            body:
+                'Искренняя забота, внимательный сервис и комфорт на протяжении всей поездки — чтобы день в море действительно запомнился.',
+          ),
+          WhyNarayanaBenefit(
+            title: 'Надёжная B2B-поддержка',
+            body:
+                'Быстрая связь, чёткая координация и постоянная поддержка наших туристических партнёров.',
+          ),
+        ]
+      : const [
+          WhyNarayanaBenefit(
+            title: 'Real Boats',
+            body:
+                'What you see is what you get. Our photos show the actual boats you’ll travel on — no surprises.',
+          ),
+          WhyNarayanaBenefit(
+            title: 'Premium Comfort',
+            body:
+                'More space, comfortable seating, and our signature roof deck make every journey more enjoyable.',
+          ),
+          WhyNarayanaBenefit(
+            title: 'Early Programs',
+            body:
+                'We start earlier, giving you a chance to experience the islands before the busiest hours.',
+          ),
+          WhyNarayanaBenefit(
+            title: 'Real Guest Experience',
+            body:
+                'Genuine hospitality, attentive service, and comfortable journeys — designed to make your day at sea truly memorable.',
+          ),
+          WhyNarayanaBenefit(
+            title: 'Reliable B2B Support',
+            body:
+                'Fast communication, dependable coordination, and dedicated support for our travel partners.',
+          ),
+        ];
 
   String get toursEyebrow => isRussian ? 'ЭКСКУРСИИ' : 'TOURS';
   String get toursTitle => isRussian
@@ -142,7 +191,6 @@ class AppStrings {
       isRussian ? 'Впечатление Андаманского моря' : 'Andaman Sea experience';
 
   String get add => isRussian ? 'Добавить' : 'Add';
-  String get addService => isRussian ? 'Добавить услугу' : 'Add service';
   String get addCard => isRussian ? 'Добавить карточку' : 'Add card';
   String get addImage => isRussian ? 'Добавить изображение' : 'Add image';
   String get edit => isRussian ? 'Редактировать' : 'Edit';
@@ -188,16 +236,6 @@ class AppStrings {
       : 'Could not upload image.';
   String get couldNotDeleteImage =>
       isRussian ? 'Не удалось удалить изображение.' : 'Could not delete image.';
-  String get enterService => isRussian ? 'Введите услугу.' : 'Enter a service.';
-  String get serviceAlreadyExists => isRussian
-      ? 'Такая услуга уже существует.'
-      : 'This service already exists.';
-  String get couldNotDeleteService =>
-      isRussian ? 'Не удалось удалить услугу.' : 'Could not delete service.';
-  String get serviceRuLabel => isRussian ? 'Услуга (RU)' : 'Service (RU)';
-  String get serviceEnLabel =>
-      isRussian ? 'Услуга (EN), необязательно' : 'Service (EN), optional';
-
   String get adminAccessDenied => isRussian ? 'Нет доступа.' : 'Access denied.';
   String get adminAccessDeniedBody => isRussian
       ? 'Этот аккаунт не имеет прав администратора. Выполнен безопасный выход.'
@@ -356,4 +394,11 @@ class AppStrings {
   String get setCover => isRussian ? 'Сделать главным' : 'Set cover';
   String get moveEarlier => isRussian ? 'Переместить раньше' : 'Move earlier';
   String get moveLater => isRussian ? 'Переместить позже' : 'Move later';
+}
+
+class WhyNarayanaBenefit {
+  const WhyNarayanaBenefit({required this.title, required this.body});
+
+  final String title;
+  final String body;
 }

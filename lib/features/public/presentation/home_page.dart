@@ -72,7 +72,6 @@ class _HomePageState extends State<HomePage> {
   late Future<List<GalleryItem>> _gallery = _repository.fetchGallery(
     admin: widget.adminMode,
   );
-  late Future<List<ServiceItem>> _services = _repository.fetchServices();
   Future<GoogleReviewsData?>? _reviews;
   String? _reviewsLanguage;
   bool _hasScrolled = false;
@@ -87,8 +86,8 @@ class _HomePageState extends State<HomePage> {
         _cms
             .cleanPendingDeletes()
             .then((_) {
-              if (mounted) _refresh();
-            })
+          if (mounted) _refresh();
+        })
             .catchError((_) {});
       });
     }
@@ -142,7 +141,6 @@ class _HomePageState extends State<HomePage> {
         admin: widget.adminMode,
       );
       _gallery = _repository.fetchGallery(admin: widget.adminMode);
-      _services = _repository.fetchServices();
     });
   }
 
@@ -183,20 +181,20 @@ class _HomePageState extends State<HomePage> {
     final isNew = existing == null;
     final card =
         existing ??
-        CmsCard(
-          id: _repository.newId(kind),
-          titleRu: '',
-          titleEn: '',
-          priceRu: '',
-          priceEn: '',
-          descriptionRu: '',
-          descriptionEn: '',
-          images: const [],
-          order: DateTime.now().millisecondsSinceEpoch,
-          isPublished: false,
-          isDeleting: false,
-          pendingStorageDeletes: const [],
-        );
+            CmsCard(
+              id: _repository.newId(kind),
+              titleRu: '',
+              titleEn: '',
+              priceRu: '',
+              priceEn: '',
+              descriptionRu: '',
+              descriptionEn: '',
+              images: const [],
+              order: DateTime.now().millisecondsSinceEpoch,
+              isPublished: false,
+              isDeleting: false,
+              pendingStorageDeletes: const [],
+            );
     final changed = await showDialog<bool>(
       context: context,
       builder: (_) => AdminCardEditorDialog(
@@ -275,39 +273,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _addService(String ru, String en) async {
-    final value = ru.trim();
-    if (value.isEmpty) {
-      _message(context.strings.enterService);
-      return;
-    }
-    final existing = await _services;
-    if (!mounted) return;
-    if (existing.any((item) => item.textRu.trim() == value)) {
-      _message(context.strings.serviceAlreadyExists);
-      return;
-    }
-    await _repository.saveService(
-      ServiceItem(
-        id: _repository.newServiceId(),
-        textRu: value,
-        textEn: en.trim(),
-        order: DateTime.now().millisecondsSinceEpoch,
-      ),
-      isNew: true,
-    );
-    _refresh();
-  }
-
-  Future<void> _deleteService(ServiceItem item) async {
-    try {
-      await _repository.deleteService(item.id);
-      _refresh();
-    } catch (_) {
-      if (mounted) _message(context.strings.couldNotDeleteService);
-    }
-  }
-
   Future<bool> _confirmDelete(String title, String body) async =>
       await showDialog<bool>(
         context: context,
@@ -326,7 +291,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ) ??
-      false;
+          false;
 
   void _message(String value) => ScaffoldMessenger.of(
     context,
@@ -369,12 +334,7 @@ class _HomePageState extends State<HomePage> {
                   SliverToBoxAdapter(child: _About()),
                   SliverToBoxAdapter(
                     key: _whyKey,
-                    child: _CmsWhyNarayana(
-                      future: _services,
-                      adminMode: widget.adminMode,
-                      onAdd: _addService,
-                      onDelete: _deleteService,
-                    ),
+                    child: const WhyNarayanaSection(),
                   ),
                   SliverToBoxAdapter(
                     key: _toursKey,
@@ -420,7 +380,7 @@ class _HomePageState extends State<HomePage> {
             _StickyHeader(
               hasScrolled: _hasScrolled,
               onTours: () => _scrollTo(_toursKey),
-              onWhyUs: () => _scrollTo(_whyKey),
+              onWhyNarayana: () => _scrollTo(_whyKey),
               onFleet: () => _scrollTo(_fleetKey),
               onBook: () async {
                 AnalyticsService.cta('header_book_whatsapp');
@@ -452,14 +412,14 @@ class _StickyHeader extends StatelessWidget {
   const _StickyHeader({
     required this.hasScrolled,
     required this.onTours,
-    required this.onWhyUs,
+    required this.onWhyNarayana,
     required this.onFleet,
     required this.onBook,
   });
 
   final bool hasScrolled;
   final VoidCallback onTours;
-  final VoidCallback onWhyUs;
+  final VoidCallback onWhyNarayana;
   final VoidCallback onFleet;
   final VoidCallback onBook;
 
@@ -494,7 +454,7 @@ class _StickyHeader extends StatelessWidget {
             ),
             child: _Nav(
               onTours: onTours,
-              onWhyUs: onWhyUs,
+              onWhyNarayana: onWhyNarayana,
               onFleet: onFleet,
               onBook: onBook,
             ),
@@ -726,10 +686,10 @@ class _Hero extends StatelessWidget {
                     onPressed: deleting ? null : onDelete,
                     icon: deleting
                         ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                         : const Icon(Icons.delete_outline),
                     label: Text(context.strings.deleteFile),
                   ),
@@ -745,13 +705,13 @@ class _Hero extends StatelessWidget {
 class _Nav extends StatelessWidget {
   const _Nav({
     required this.onTours,
-    required this.onWhyUs,
+    required this.onWhyNarayana,
     required this.onFleet,
     required this.onBook,
   });
 
   final VoidCallback onTours;
-  final VoidCallback onWhyUs;
+  final VoidCallback onWhyNarayana;
   final VoidCallback onFleet;
   final VoidCallback onBook;
 
@@ -763,7 +723,7 @@ class _Nav extends StatelessWidget {
     final narrow = isNarrow(context);
     final actions = [
       _HeaderAction(strings.toursNav, onTours),
-      _HeaderAction(strings.whyUs, onWhyUs),
+      _HeaderAction(strings.whyNarayana, onWhyNarayana),
       _HeaderAction(strings.ourFleetNav, onFleet),
     ];
     return Row(
@@ -888,10 +848,10 @@ class _MobileNavigationMenuState extends State<_MobileNavigationMenu> {
                     children: widget.actions
                         .map(
                           (action) => _MobileNavigationOption(
-                            action: action,
-                            onSelected: _close,
-                          ),
-                        )
+                        action: action,
+                        onSelected: _close,
+                      ),
+                    )
                         .toList(),
                   ),
                 ),
@@ -1118,8 +1078,8 @@ class _LanguageSelectorState extends State<_LanguageSelector> {
 
   double get _selectorWidth => widget.compact
       ? widget.narrow
-            ? 92
-            : 112
+      ? 92
+      : 112
       : 148;
 }
 
@@ -1232,151 +1192,84 @@ class _About extends StatelessWidget {
   }
 }
 
-class _CmsWhyNarayana extends StatefulWidget {
-  const _CmsWhyNarayana({
-    required this.future,
-    required this.adminMode,
-    required this.onAdd,
-    required this.onDelete,
-  });
-  final Future<List<ServiceItem>> future;
-  final bool adminMode;
-  final Future<void> Function(String ru, String en) onAdd;
-  final Future<void> Function(ServiceItem item) onDelete;
-
-  @override
-  State<_CmsWhyNarayana> createState() => _CmsWhyNarayanaState();
-}
-
-class _CmsWhyNarayanaState extends State<_CmsWhyNarayana> {
-  final _ru = TextEditingController();
-  final _en = TextEditingController();
-  bool _saving = false;
-
-  @override
-  void dispose() {
-    _ru.dispose();
-    _en.dispose();
-    super.dispose();
-  }
-
-  Future<void> _add() async {
-    if (_saving) return;
-    setState(() => _saving = true);
-    try {
-      await widget.onAdd(_ru.text, _en.text);
-      if (mounted) {
-        _ru.clear();
-        _en.clear();
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
+class WhyNarayanaSection extends StatelessWidget {
+  const WhyNarayanaSection({super.key});
 
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
     return _Section(
       color: AppTheme.sand,
-      child: FutureBuilder<List<ServiceItem>>(
-        future: widget.future,
-        builder: (context, snapshot) {
-          final values = snapshot.data ?? const <ServiceItem>[];
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Eyebrow(strings.whyEyebrow),
-              const SizedBox(height: 14),
-              Text(
-                strings.whyTitle,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              if (widget.adminMode) ...[
-                const SizedBox(height: 18),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final vertical = constraints.maxWidth < 620;
-                    final ruField = TextField(
-                      controller: _ru,
-                      textInputAction: TextInputAction.next,
-                      decoration: InputDecoration(
-                        labelText: strings.serviceRuLabel,
-                      ),
-                    );
-                    final enField = TextField(
-                      controller: _en,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _add(),
-                      decoration: InputDecoration(
-                        labelText: strings.serviceEnLabel,
-                      ),
-                    );
-                    final button = FilledButton.icon(
-                      onPressed: _saving ? null : _add,
-                      icon: const Icon(Icons.add),
-                      label: Text(strings.addService),
-                    );
-                    return vertical
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              ruField,
-                              const SizedBox(height: 10),
-                              enField,
-                              const SizedBox(height: 10),
-                              button,
-                            ],
-                          )
-                        : Row(
-                            children: [
-                              Expanded(child: ruField),
-                              const SizedBox(width: 10),
-                              Expanded(child: enField),
-                              const SizedBox(width: 10),
-                              button,
-                            ],
-                          );
-                  },
-                ),
-              ],
-              const SizedBox(height: 30),
-              if (snapshot.connectionState != ConnectionState.done)
-                const Center(child: CircularProgressIndicator())
-              else if (values.isEmpty)
-                const _DevelopmentState()
-              else
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: values
-                      .map(
-                        (value) => Chip(
-                          avatar: const Icon(
-                            Icons.check_circle_outline,
-                            size: 18,
-                          ),
-                          label: Text(
-                            value.textFor(strings.locale.languageCode),
-                          ),
-                          deleteIcon: widget.adminMode
-                              ? const Icon(Icons.close, color: Colors.red)
-                              : null,
-                          onDeleted: widget.adminMode
-                              ? () => widget.onDelete(value)
-                              : null,
-                        ),
-                      )
-                      .toList(),
-                ),
-              const SizedBox(height: 18),
-              Text(strings.whyNote),
-            ],
-          );
-        },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            strings.whyNarayana,
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 30),
+          _WhyNarayanaGrid(benefits: strings.whyNarayanaBenefits),
+        ],
       ),
     );
   }
+}
+
+class _WhyNarayanaGrid extends StatelessWidget {
+  const _WhyNarayanaGrid({required this.benefits});
+
+  final List<WhyNarayanaBenefit> benefits;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      const gap = 18.0;
+      final width = constraints.maxWidth;
+      final columns = width < 700 ? 1 : width < 1000 ? 2 : 3;
+      final standardWidth = (width - gap * (columns - 1)) / columns;
+      final finalRowWidth = columns < 3 ? width : (width - gap) / 2;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: [
+          for (var index = 0; index < benefits.length; index++)
+            SizedBox(
+              width: index < benefits.length - (columns == 3 ? 2 : 1)
+                  ? standardWidth
+                  : finalRowWidth,
+              height: 170,
+              child: _WhyNarayanaCard(benefit: benefits[index]),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+class _WhyNarayanaCard extends StatelessWidget {
+  const _WhyNarayanaCard({required this.benefit});
+
+  final WhyNarayanaBenefit benefit;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    label: benefit.title,
+    child: Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(benefit.title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 10),
+            Text(benefit.body, style: const TextStyle(height: 1.5)),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _CmsCardsSection extends StatefulWidget {
@@ -1410,8 +1303,8 @@ class _CmsCardsSectionState extends State<_CmsCardsSection> {
     final expandedCardId = _expandedCardId;
     if (expandedCardId == null) return;
     final renderBox =
-        _cardKeys[expandedCardId]?.currentContext?.findRenderObject()
-            as RenderBox?;
+    _cardKeys[expandedCardId]?.currentContext?.findRenderObject()
+    as RenderBox?;
     if (renderBox == null) return;
     final cardBounds = renderBox.localToGlobal(Offset.zero) & renderBox.size;
     if (!cardBounds.contains(globalPosition) && mounted) {
@@ -1555,10 +1448,10 @@ class _CmsContentCardState extends State<CmsContentCard> {
                     onTap: imageUrls.isEmpty
                         ? null
                         : () => showFullscreenImageViewer(
-                            context,
-                            imageUrls: imageUrls,
-                            initialIndex: selectedImageIndex,
-                          ),
+                      context,
+                      imageUrls: imageUrls,
+                      initialIndex: selectedImageIndex,
+                    ),
                     child: _NetworkMedia(
                       url: imageUrls.isEmpty
                           ? null
@@ -1599,7 +1492,7 @@ class _CmsContentCardState extends State<CmsContentCard> {
                                   imageUrls[index],
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, _, _) =>
-                                      const _ImagePlaceholder(),
+                                  const _ImagePlaceholder(),
                                 ),
                               ),
                             ),
@@ -1784,19 +1677,19 @@ class _CmsGallerySection extends StatelessWidget {
                               onTap: imageUrls.isEmpty
                                   ? null
                                   : () => showFullscreenImageViewer(
-                                      context,
-                                      imageUrls: imageUrls,
-                                      initialIndex: imageUrls.indexOf(
-                                        items[index].media.url,
-                                      ),
-                                    ),
+                                context,
+                                imageUrls: imageUrls,
+                                initialIndex: imageUrls.indexOf(
+                                  items[index].media.url,
+                                ),
+                              ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: Image.network(
                                   items[index].media.url,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, _, _) =>
-                                      const _ImagePlaceholder(),
+                                  const _ImagePlaceholder(),
                                 ),
                               ),
                             ),
@@ -1848,7 +1741,7 @@ class _ResponsiveGrid extends StatelessWidget {
         runSpacing: 18,
         children: List<Widget>.generate(
           itemCount,
-          (index) => SizedBox(width: cardWidth, child: itemBuilder(index)),
+              (index) => SizedBox(width: cardWidth, child: itemBuilder(index)),
         ),
       );
     },
@@ -1864,11 +1757,11 @@ class _NetworkMedia extends StatelessWidget {
   Widget build(BuildContext context) => url == null || url!.isEmpty
       ? const _ImagePlaceholder()
       : Image.network(
-          url!,
-          width: double.infinity,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => const _ImagePlaceholder(),
-        );
+    url!,
+    width: double.infinity,
+    fit: BoxFit.cover,
+    errorBuilder: (_, _, _) => const _ImagePlaceholder(),
+  );
 }
 
 class _ImagePlaceholder extends StatelessWidget {
@@ -2005,61 +1898,61 @@ class _GoogleReviewCards extends StatelessWidget {
       children: reviews
           .map(
             (review) => SizedBox(
-              width: constraints.maxWidth < 400 ? constraints.maxWidth : 360,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          width: constraints.maxWidth < 400 ? constraints.maxWidth : 360,
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          _GoogleReviewAvatar(authorName: review.authorName),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              review.authorName,
-                              style: _googleReviewTextStyle.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      _RatingStars(rating: review.rating),
-                      if (review.relativeDate?.isNotEmpty ?? false)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            review.relativeDate!,
-                            style: _googleReviewTextStyle,
-                          ),
-                        ),
-                      if (review.text.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Text(
-                            review.text,
-                            style: _googleReviewTextStyle,
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 14),
+                      _GoogleReviewAvatar(authorName: review.authorName),
+                      const SizedBox(width: 10),
+                      Expanded(
                         child: Text(
-                          context.strings.reviewFromGoogle,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black54,
+                          review.authorName,
+                          style: _googleReviewTextStyle.copyWith(
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 14),
+                  _RatingStars(rating: review.rating),
+                  if (review.relativeDate?.isNotEmpty ?? false)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        review.relativeDate!,
+                        style: _googleReviewTextStyle,
+                      ),
+                    ),
+                  if (review.text.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        review.text,
+                        style: _googleReviewTextStyle,
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Text(
+                      context.strings.reviewFromGoogle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          )
+          ),
+        ),
+      )
           .toList(),
     ),
   );

@@ -136,18 +136,6 @@ void main() {
     expect(restored.validationIssue(forPublish: true), isNull);
   });
 
-  test('empty English fields fall back to Russian and signal translation', () {
-    const item = ServiceItem(
-      id: 'service',
-      textRu: 'Трансфер',
-      textEn: '',
-      order: 10,
-    );
-
-    expect(item.textFor('en'), 'Трансфер');
-    expect(item.needsEnglishTranslation, isTrue);
-  });
-
   test('hero media preserves video type and path', () {
     const hero = HeroMedia(
       media: StoredMedia(
